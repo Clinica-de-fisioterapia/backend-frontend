@@ -1,82 +1,57 @@
--- ====================================================================================
--- PARTE 1: ESTRUTURA GLOBAL (SCHEMA PUBLIC)
--- Descrição: Prepara o banco de dados com objetos compartilhados por todos os tenants.
--- Execução: Deve ser executado apenas UMA VEZ.
--- ====================================================================================
+-- =================================================================================
+-- ARQUIVO: ESTRUTURA GLOBAL.sql
+-- OBJETIVO: Prepara o banco de dados com objetos compartilhados por todos os tenants.
+-- EXECUÇÃO: Deve ser executado apenas UMA VEZ na configuração inicial do banco.
+-- =================================================================================
 
--- 1. HABILITA EXTENSÕES GLOBAIS
--- Para UUIDs, busca de texto por similaridade, e suporte a tipos B-tree em índices GiST.
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+-- 1. HABILITA EXTENSÕES GLOBAIS NECESSÁRIAS
+-- Para gerar UUIDs, usar constraints de exclusão e busca de texto por similaridade.
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "btree_gist";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
--- 2. CRIA FUNÇÕES E TIPOS GLOBAIS
--- Função para atualizar o campo 'updated_at' automaticamente.
-CREATE OR REPLACE FUNCTION public.trigger_set_timestamp()
+-- 2. CRIA TIPOS ENUM GLOBAIS
+-- Estes tipos serão usados por tabelas de tenants, mas sua definição é única.
+CREATE TYPE user_role AS ENUM ('admin', 'professional', 'receptionist');
+CREATE TYPE booking_status AS ENUM ('confirmed', 'canceled', 'completed', 'no_show');
+CREATE TYPE schedule_status AS ENUM ('available', 'booked', 'blocked');
+
+-- 3. FUNÇÕES GLOBAIS DE TRIGGER E UTILITÁRIAS
+
+-- Função para atualizar a coluna 'updated_at' automaticamente.
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
+    NEW.updated_at = NOW();
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Tipo ENUM para os status de agendamento.
-DO $$
+-- Função resiliente para criar partições da tabela 'bookings' se não existirem.
+-- Um Worker Service chamará esta função para garantir que partições futuras sempre existam.
+CREATE OR REPLACE FUNCTION create_bookings_partition_if_not_exists(start_ts timestamptz)
+RETURNS void LANGUAGE plpgsql AS $$
+DECLARE
+    partition_name TEXT := 'bookings_y' || to_char(start_ts, 'YYYY');
+    end_ts timestamptz := date_trunc('year', start_ts) + interval '1 year';
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'booking_status') THEN
-        CREATE TYPE public.booking_status AS ENUM (
-            'confirmed',
-            'completed',
-            'canceled',
-            'no_show'
-        );
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = partition_name) THEN
+        EXECUTE format('CREATE TABLE IF NOT EXISTS %I PARTITION OF bookings FOR VALUES FROM (%L) TO (%L);',
+                       partition_name, start_ts::text, end_ts::text);
     END IF;
-END$$;
+END;
+$$;
 
--- 3. CRIAÇÃO DAS TABELAS DE GERENCIAMENTO GLOBAL
+-- 4. TABELAS GLOBAIS (Não pertencem a um tenant específico)
 
--- Tabela de Planos
-CREATE TABLE IF NOT EXISTS public.plans (
-    plan_id SERIAL PRIMARY KEY,
+-- Tabela de Planos de Assinatura
+CREATE TABLE IF NOT EXISTS plans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    price_monthly DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-    max_units INT NOT NULL DEFAULT 1,
+    price_monthly NUMERIC(10, 2) NOT NULL,
     max_professionals INT NOT NULL DEFAULT 5,
-    max_customers INT,
-    allow_dedicated_database BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
-);
-
--- Tabela de Tenants (Inquilinos)
-CREATE TABLE IF NOT EXISTS public.tenants (
-    tenant_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    company_name VARCHAR(255) NOT NULL,
-    cnpj CHAR(14) UNIQUE,
-    subdomain VARCHAR(100) NOT NULL UNIQUE CHECK (subdomain ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
-    tenancy_model VARCHAR(50) NOT NULL CHECK (tenancy_model IN ('shared_schema', 'dedicated_database')) DEFAULT 'shared_schema',
-    db_identifier VARCHAR(255) NOT NULL UNIQUE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP WITH TIME ZONE,
-    created_by UUID,
-    updated_by UUID
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de Assinaturas
-CREATE TABLE IF NOT EXISTS public.subscriptions (
-    subscription_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES public.tenants(tenant_id),
-    plan_id INT NOT NULL REFERENCES public.plans(plan_id),
-    status VARCHAR(50) NOT NULL CHECK (status IN ('active', 'canceled', 'past_due', 'trial')) DEFAULT 'trial',
-    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_date TIMESTAMP WITH TIME ZONE,
-    trial_ends_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID,
-    updated_by UUID
-);
+-- ========================== FIM DA ESTRUTURA GLOBAL ==========================
