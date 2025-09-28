@@ -1,22 +1,28 @@
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using MediatR;
+using System.Collections.Generic; // Para KeyNotFoundException
+
 namespace Chronosystem.Application.Features.Units.Commands.UpdateUnit;
 
-public class UpdateUnitCommandHandler(IUnitRepository unitRepository) : IRequestHandler<UpdateUnitCommand>
+public class UpdateUnitCommandHandler(IUnitRepository unitRepository, IUnitOfWork unitOfWork)
+    : IRequestHandler<UpdateUnitCommand>
 {
     private readonly IUnitRepository _unitRepository = unitRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task Handle(UpdateUnitCommand request, CancellationToken cancellationToken)
     {
-        var unit = await _unitRepository.GetByIdAsync(request.UnitId, request.TenantId);
-        if (unit is null) { /* Lançar exceção de não encontrado */ return; }
+        var unit = await _unitRepository.GetByIdAsync(request.UnitId);
 
-        unit.Name = request.Name;
-        unit.UpdatedBy = request.UserId;
-        // O trigger do banco já atualiza UpdatedAt, mas podemos garantir aqui
-        unit.UpdatedAt = DateTime.UtcNow;
+        if (unit is null)
+        {
+            throw new KeyNotFoundException($"Unidade com ID {request.UnitId} não encontrada.");
+        }
+
+        unit.UpdateName(request.Name);
+        unit.UpdatedBy = request.UserId; // O interceptor cuidará do UpdatedAt
 
         _unitRepository.Update(unit);
-        await _unitRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

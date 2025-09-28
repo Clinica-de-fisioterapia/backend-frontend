@@ -1,27 +1,39 @@
-// Chronosystem.Domain/Entities/Unit.cs
-
-using Chronosystem.Domain.Shared; // Supondo um namespace para a classe base
+using Chronosystem.Domain.Common; // Garanta que o namespace está correto
 
 namespace Chronosystem.Domain.Entities;
 
-// Usaremos uma classe base para propriedades comuns, o que é uma ótima prática.
-public class AuditableEntity : BaseEntity
-{
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
-    public Guid? CreatedBy { get; set; }
-    public Guid? UpdatedBy { get; set; }
-    public DateTime? DeletedAt { get; set; }
-}
-
-public class BaseEntity
-{
-    public Guid Id { get; set; }
-    public Guid TenantId { get; set; }
-}
-
-// Nossa entidade Unit herda as propriedades comuns
 public class Unit : AuditableEntity
 {
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; private set; } = string.Empty;
+
+    // Construtor privado para o EF Core
+    private Unit() { }
+
+ 
+    public static Unit Create(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("O nome da unidade não pode ser nulo ou vazio.", nameof(name));
+        }
+
+        return new Unit
+        {
+            Id = Guid.NewGuid(),
+            Name = name
+        };
+    }
+
+    public void UpdateName(string newName)
+    {
+        if (!string.IsNullOrWhiteSpace(newName))
+        {
+            Name = newName;
+        }
+    }
+    
+    public void SoftDelete()
+    {
+        DeletedAt = DateTime.UtcNow;
+    }
 }

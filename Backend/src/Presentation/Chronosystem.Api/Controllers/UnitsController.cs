@@ -1,61 +1,97 @@
-// Chronosystem.Api/Controllers/UnitsController.cs
 using Chronosystem.Application.Features.Units.Commands.CreateUnit;
-using Chronosystem.Application.Features.Units.Commands.DeleteUnit;
-using Chronosystem.Application.Features.Units.Commands.UpdateUnit;
+using Chronosystem.Application.Features.Units.Queries.GetAllUnits;
+// TODO: Adicionar os usings para os outros Commands e Queries quando forem criados
+// using Chronosystem.Application.Features.Units.Commands.UpdateUnit;
+// using Chronosystem.Application.Features.Units.Commands.DeleteUnit;
+// using Chronosystem.Application.Features.Units.Queries.GetUnitById;
 using Chronosystem.Application.Features.Units.DTOs;
-// Adicione os usings para as Queries
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chronosystem.Api.Controllers;
 
 [ApiController]
-[Route("api/units")]
-public class UnitsController(ISender mediator) : ControllerBase
+[Route("api/[controller]")] // Rota base: /api/units
+public class UnitsController : ControllerBase
 {
-    private readonly ISender _mediator = mediator;
+    private readonly ISender _mediator;
 
+    public UnitsController(ISender mediator)
+    {
+        _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Cria uma nova Unidade.
+    /// </summary>
     [HttpPost]
-    public async Task<IActionResult> CreateUnit([FromBody] CreateUnitDto createUnitDto)
+    [ProducesResponseType(typeof(UnitDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateUnit([FromBody] CreateUnitCommand command)
     {
-        // TODO: Obter TenantId e UserId do contexto do usuário autenticado (JWT)
-        var tenantId = Guid.Parse("substituir-pelo-tenant-id-do-token");
-        var userId = Guid.Parse("substituir-pelo-user-id-do-token");
-        
-        var command = new CreateUnitCommand(createUnitDto.Name, tenantId, userId);
         var result = await _mediator.Send(command);
-        
-        return CreatedAtAction(nameof(GetUnitById), new { unitId = result.Id }, result);
+        return CreatedAtAction(nameof(GetUnitById), new { id = result.Id }, result);
     }
 
-    [HttpPut("{unitId:guid}")]
-    public async Task<IActionResult> UpdateUnit(Guid unitId, [FromBody] UpdateUnitDto updateUnitDto)
+    /// <summary>
+    /// Busca todas as Unidades do tenant.
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<UnitDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllUnits()
     {
-        // TODO: Obter TenantId e UserId do contexto do usuário autenticado
-        var tenantId = Guid.Parse("substituir-pelo-tenant-id-do-token");
-        var userId = Guid.Parse("substituir-pelo-user-id-do-token");
+        // Esta chamada agora executa a busca real no banco de dados.
+        var result = await _mediator.Send(new GetAllUnitsQuery());
+        return Ok(result);
+    }
 
-        var command = new UpdateUnitCommand(unitId, updateUnitDto.Name, tenantId, userId);
-        await _mediator.Send(command);
+    /// <summary>
+    /// Busca uma Unidade específica pelo seu ID.
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(UnitDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUnitById(Guid id)
+    {
+        // TODO: Implementar GetUnitByIdQuery e GetUnitByIdQueryHandler.
+        // var query = new GetUnitByIdQuery(id);
+        // var result = await _mediator.Send(query);
+        // return result is not null ? Ok(result) : NotFound();
 
+        await Task.CompletedTask;
+        return Ok(new UnitDto(id, "Unidade de Teste (GET por ID)", DateTime.UtcNow, DateTime.UtcNow));
+    }
+
+    /// <summary>
+    /// Atualiza uma Unidade existente.
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateUnit(Guid id, [FromBody] object updateCommand) // TODO: Troque 'object' pelo seu UpdateUnitCommand
+    {
+        // TODO: Implementar UpdateUnitCommand e seu Handler.
+        // var command = new UpdateUnitCommand(id, updateDto.Name, ...);
+        // await _mediator.Send(command);
+        
+        await Task.CompletedTask;
         return NoContent();
     }
 
-    [HttpDelete("{unitId:guid}")]
-    public async Task<IActionResult> DeleteUnit(Guid unitId)
+    /// <summary>
+    /// Exclui uma Unidade (soft delete).
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteUnit(Guid id)
     {
-        // TODO: Obter TenantId do contexto do usuário autenticado
-        var tenantId = Guid.Parse("substituir-pelo-tenant-id-do-token");
+        // TODO: Implementar DeleteUnitCommand e seu Handler.
+        // var command = new DeleteUnitCommand(id);
+        // await _mediator.Send(command);
 
-        var command = new DeleteUnitCommand(unitId, tenantId);
-        await _mediator.Send(command);
-        
+        await Task.CompletedTask;
         return NoContent();
     }
-
-    // [HttpGet("{unitId:guid}")]
-    // public async Task<IActionResult> GetUnitById(Guid unitId) { ... }
-
-    // [HttpGet]
-    // public async Task<IActionResult> GetAllUnits() { ... }
 }

@@ -1,41 +1,129 @@
+// =================================================================================
+// ARQUIVO: Program.cs
+// OBJETIVO: Ponto de entrada da API. Configura todos os serviços (injeção de
+// dependência) e o pipeline de como as requisições HTTP são tratadas.
+// =================================================================================
+
+// --- USING STATEMENTS ---
+using Chronosystem.Api.Middleware;
+using Chronosystem.Application.Common.Behaviors; // Adicionado para o ValidationBehavior
+using Chronosystem.Application.Common.Interfaces.Persistence;
+using Chronosystem.Infrastructure.Persistence.DbContexts;
+using Chronosystem.Infrastructure.Persistence.Repositories;
+using EFCore.NamingConventions;
+using FluentValidation; // Adicionado para registrar os validadores
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// =================================================================================
+// 1. CONFIGURAÇÃO DOS SERVIÇOS (Injeção de Dependência)
+// =================================================================================
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+// Adiciona o serviço que permite acessar o HttpContext atual (e os headers).
+builder.Services.AddHttpContextAccessor();
+
+// --- Bloco de configuração do Swagger atualizado ---
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("TenantId", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Name = "X-Tenant",
+        Type = SecuritySchemeType.ApiKey,
+        Description = "Insira o subdomínio do Tenant (ex: empresa_teste)"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "TenantId"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// --- Bloco de configuração do DbContext atualizado para Multi-Tenancy ---
+builder.Services.AddDbContext<ApplicationDbContext>(
+    (serviceProvider, options) =>
+    {
+        var httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
+        var tenant = httpContextAccessor.HttpContext?.Request.Headers["X-Tenant"].FirstOrDefault();
+
+        var fullConnectionString = $"{connectionString};Search Path={tenant},public";
+
+        options.UseNpgsql(fullConnectionString)
+               .UseSnakeCaseNamingConvention();
+    }
+);
+
+builder.Services.AddScoped<IUnitRepository, UnitRepository>();
+builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
+
+// --- Configuração da Validação e MediatR ---
+
+// Registra todos os validadores do FluentValidation que estão no projeto Application.
+builder.Services.AddValidatorsFromAssembly(Assembly.Load("Chronosystem.Application"));
+
+// Registra o MediatR e adiciona nosso ValidationBehavior ao pipeline.
+// Toda requisição MediatR passará primeiro pelo ValidationBehavior antes de chegar ao Handler.
+builder.Services.AddMediatR(cfg => {
+    cfg.RegisterServicesFromAssembly(Assembly.Load("Chronosystem.Application"));
+    
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+});
+
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// =================================================================================
+// 2. CONFIGURAÇÃO DO PIPELINE DE REQUISIÇÕES HTTP
+// =================================================================================
+
+// Adicione o middleware de tratamento de exceções bem no início
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Comente esta linha para facilitar os testes locais.
+// app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// Middleware que valida a presença do header X-Tenant.
+app.UseMiddleware<TenantResolverMiddleware>();
 
-app.MapGet("/weatherforecast", () =>
+app.MapControllers();
+
+app.Lifetime.ApplicationStarted.Register(() =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var serverAddress = app.Urls.FirstOrDefault();
+    if (serverAddress != null)
+    {
+        var swaggerUrl = $"{serverAddress}/swagger";
+        Console.WriteLine("===================================================");
+        Console.WriteLine($"Swagger UI disponível em: {swaggerUrl}");
+        Console.WriteLine("===================================================");
+    }
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
