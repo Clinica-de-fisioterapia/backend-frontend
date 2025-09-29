@@ -1,28 +1,33 @@
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using MediatR;
-using System.Collections.Generic; // Para KeyNotFoundException
 
 namespace Chronosystem.Application.Features.Units.Commands.UpdateUnit;
 
-public class UpdateUnitCommandHandler(IUnitRepository unitRepository, IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateUnitCommand>
+public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand, Unit>
 {
-    private readonly IUnitRepository _unitRepository = unitRepository;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IUnitRepository _unitRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public async Task Handle(UpdateUnitCommand request, CancellationToken cancellationToken)
+    public UpdateUnitCommandHandler(IUnitRepository unitRepository, IUnitOfWork unitOfWork)
     {
-        var unit = await _unitRepository.GetByIdAsync(request.UnitId);
+        _unitRepository = unitRepository;
+        _unitOfWork = unitOfWork;
+    }
 
-        if (unit is null)
+    public async Task<Unit> Handle(UpdateUnitCommand request, CancellationToken cancellationToken)
+    {
+        var unit = await _unitRepository.GetByIdAsync(request.Id, cancellationToken);
+
+        if (unit == null)
         {
-            throw new KeyNotFoundException($"Unidade com ID {request.UnitId} não encontrada.");
+            throw new KeyNotFoundException($"Unidade {request.Id} não encontrada.");
         }
 
         unit.UpdateName(request.Name);
-        unit.UpdatedBy = request.UserId; // O interceptor cuidará do UpdatedAt
 
         _unitRepository.Update(unit);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Unit.Value;
     }
 }

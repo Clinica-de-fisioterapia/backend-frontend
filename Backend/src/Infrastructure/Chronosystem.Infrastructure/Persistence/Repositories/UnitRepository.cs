@@ -5,35 +5,38 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronosystem.Infrastructure.Persistence.Repositories;
 
-public class UnitRepository(ApplicationDbContext dbContext) : IUnitRepository
+public class UnitRepository : IUnitRepository
 {
-    private readonly ApplicationDbContext _dbContext = dbContext;
+    private readonly ApplicationDbContext _dbContext;
 
-    public async Task AddAsync(Unit unit)
+    public UnitRepository(ApplicationDbContext dbContext)
     {
-        await _dbContext.Units.AddAsync(unit);
+        _dbContext = dbContext;
     }
 
-    // A lógica de tenant agora é controlada pelo schema. Não precisamos mais do tenantId aqui.
-    public async Task<IEnumerable<Unit>> GetAllByTenantAsync(Guid tenantId)
+    public async Task AddAsync(Unit unit, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Units.AddAsync(unit, cancellationToken);
+    }
+
+    public async Task<IEnumerable<Unit>> GetAllByTenantAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.Units
             .Where(u => u.DeletedAt == null)
-            .ToListAsync();
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
-    // A lógica de tenant também foi removida daqui.
-    public async Task<Unit?> GetByIdAsync(Guid unitId, Guid tenantId)
+    public async Task<Unit?> GetByIdAsync(Guid unitId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Units
-            .FirstOrDefaultAsync(u => u.Id == unitId && u.DeletedAt == null);
+            .FirstOrDefaultAsync(u => u.Id == unitId && u.DeletedAt == null, cancellationToken);
     }
 
-    public async Task<bool> UnitNameExistsAsync(string name)
+    public async Task<bool> UnitNameExistsAsync(string name, CancellationToken cancellationToken = default)
     {
-      
         return await _dbContext.Units
-            .AnyAsync(u => u.Name.ToLower() == name.ToLower() && u.DeletedAt == null);
+            .AnyAsync(u => u.Name.ToLower() == name.ToLower() && u.DeletedAt == null, cancellationToken);
     }
 
     public void Remove(Unit unit)
@@ -41,19 +44,9 @@ public class UnitRepository(ApplicationDbContext dbContext) : IUnitRepository
         unit.SoftDelete();
         _dbContext.Units.Update(unit);
     }
-    
+
     public void Update(Unit unit)
     {
         _dbContext.Units.Update(unit);
-    }
-
-    public Task<Unit?> GetByIdAsync(Guid unitId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<Unit>> GetAllByTenantAsync()
-    {
-        throw new NotImplementedException();
     }
 }

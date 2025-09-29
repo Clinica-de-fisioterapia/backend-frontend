@@ -19,4 +19,9 @@ public class DeleteUnitCommandHandler(IUnitRepository unitRepository, IUnitOfWor
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
+
+    Task<Unit> IRequestHandler<DeleteUnitCommand, Unit>.Handle(DeleteUnitCommand request, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
 }

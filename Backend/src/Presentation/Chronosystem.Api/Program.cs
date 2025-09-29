@@ -6,16 +6,16 @@
 
 // --- USING STATEMENTS ---
 using Chronosystem.Api.Middleware;
-using Chronosystem.Application.Common.Behaviors; // Adicionado para o ValidationBehavior
+using Chronosystem.Application.Common.Behaviors; // Para o ValidationBehavior
+using Chronosystem.Application; // Para AssemblyMarker
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Infrastructure.Persistence.DbContexts;
 using Chronosystem.Infrastructure.Persistence.Repositories;
 using EFCore.NamingConventions;
-using FluentValidation; // Adicionado para registrar os validadores
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,10 +26,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Adiciona o serviço que permite acessar o HttpContext atual (e os headers).
 builder.Services.AddHttpContextAccessor();
 
-// --- Bloco de configuração do Swagger atualizado ---
+// --- Configuração do Swagger ---
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("TenantId", new OpenApiSecurityScheme
@@ -58,7 +57,7 @@ builder.Services.AddSwaggerGen(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// --- Bloco de configuração do DbContext atualizado para Multi-Tenancy ---
+// --- DbContext Multi-Tenancy ---
 builder.Services.AddDbContext<ApplicationDbContext>(
     (serviceProvider, options) =>
     {
@@ -75,29 +74,22 @@ builder.Services.AddDbContext<ApplicationDbContext>(
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
+// --- FluentValidation ---
+builder.Services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly);
 
-// --- Configuração da Validação e MediatR ---
-
-// Registra todos os validadores do FluentValidation que estão no projeto Application.
-builder.Services.AddValidatorsFromAssembly(Assembly.Load("Chronosystem.Application"));
-
-// Registra o MediatR e adiciona nosso ValidationBehavior ao pipeline.
-// Toda requisição MediatR passará primeiro pelo ValidationBehavior antes de chegar ao Handler.
-builder.Services.AddMediatR(cfg => {
-    cfg.RegisterServicesFromAssembly(Assembly.Load("Chronosystem.Application"));
-    
-    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-});
-
+// --- MediatR ---
+// Registra todos os Handlers do projeto Application
+builder.Services.AddMediatR(typeof(AssemblyMarker).Assembly);
+// Adiciona o ValidationBehavior no pipeline
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 
 var app = builder.Build();
 
 // =================================================================================
-// 2. CONFIGURAÇÃO DO PIPELINE DE REQUISIÇÕES HTTP
+// 2. PIPELINE HTTP
 // =================================================================================
 
-// Adicione o middleware de tratamento de exceções bem no início
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -106,10 +98,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Comente esta linha para facilitar os testes locais.
 // app.UseHttpsRedirection();
 
-// Middleware que valida a presença do header X-Tenant.
 app.UseMiddleware<TenantResolverMiddleware>();
 
 app.MapControllers();

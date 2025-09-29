@@ -7,6 +7,7 @@ using Chronosystem.Application.Features.Units.Queries.GetAllUnits;
 using Chronosystem.Application.Features.Units.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Chronosystem.Application.Features.Units.Commands.UpdateUnit;
 
 namespace Chronosystem.Api.Controllers;
 
@@ -68,16 +69,12 @@ public class UnitsController : ControllerBase
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateUnit(Guid id, [FromBody] object updateCommand) // TODO: Troque 'object' pelo seu UpdateUnitCommand
+    public async Task<IActionResult> UpdateUnit(Guid id, [FromBody] UpdateUnitDto dto)
     {
-        // TODO: Implementar UpdateUnitCommand e seu Handler.
-        // var command = new UpdateUnitCommand(id, updateDto.Name, ...);
-        // await _mediator.Send(command);
-        
-        await Task.CompletedTask;
+        await _mediator.Send(new UpdateUnitCommand(id, dto.Name));
         return NoContent();
     }
+
 
     /// <summary>
     /// Exclui uma Unidade (soft delete).

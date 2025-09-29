@@ -63,9 +63,13 @@
               "target": "Package",
               "version": "[12.0.0, )"
             },
+            "Mapster": {
+              "target": "Package",
+              "version": "[7.4.0, )"
+            },
             "MediatR": {
               "target": "Package",
-              "version": "[13.0.0, )"
+              "version": "[11.1.0, )"
             }
           },
           "imports": [
@@ -289,6 +293,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "MediatR.Extensions.Microsoft.DependencyInjection": {
+              "target": "Package",
+              "version": "[11.0.0, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[9.0.8, )"
