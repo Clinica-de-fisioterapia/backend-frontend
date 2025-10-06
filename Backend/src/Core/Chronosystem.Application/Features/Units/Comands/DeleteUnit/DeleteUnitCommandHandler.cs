@@ -1,5 +1,6 @@
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using MediatR;
+using System.Collections.Generic; // Para KeyNotFoundException
 
 namespace Chronosystem.Application.Features.Units.Commands.DeleteUnit;
 
@@ -13,15 +14,12 @@ public class DeleteUnitCommandHandler(IUnitRepository unitRepository, IUnitOfWor
     {
         var unit = await _unitRepository.GetByIdAsync(request.UnitId);
 
-        if (unit is not null)
+        if (unit is null)
         {
-            _unitRepository.Remove(unit);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            throw new KeyNotFoundException($"Unidade com ID {request.UnitId} não encontrada.");
         }
-    }
 
-    Task<Unit> IRequestHandler<DeleteUnitCommand, Unit>.Handle(DeleteUnitCommand request, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
+        _unitRepository.Remove(unit);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

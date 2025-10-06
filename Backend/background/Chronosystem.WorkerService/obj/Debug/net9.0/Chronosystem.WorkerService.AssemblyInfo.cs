@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Chronosystem.WorkerService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8cf3add714b3c939c1aa2fd3eb09cc9080ba2d71")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e0970999aa57c012e84e7b5a7119c8de2df4bbc9")]
 [assembly: System.Reflection.AssemblyProductAttribute("Chronosystem.WorkerService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Chronosystem.WorkerService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,9 +1,11 @@
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using MediatR;
+using System.Collections.Generic; // Para KeyNotFoundException
 
 namespace Chronosystem.Application.Features.Units.Commands.UpdateUnit;
 
-public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand, Unit>
+// ✅ CORREÇÃO: A interface não tem o segundo parâmetro genérico <Unit>.
+public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand>
 {
     private readonly IUnitRepository _unitRepository;
     private readonly IUnitOfWork _unitOfWork;
@@ -14,20 +16,23 @@ public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand, Unit>
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Unit> Handle(UpdateUnitCommand request, CancellationToken cancellationToken)
+    // ✅ CORREÇÃO: O tipo de retorno é apenas "Task".
+    public async Task Handle(UpdateUnitCommand request, CancellationToken cancellationToken)
     {
-        var unit = await _unitRepository.GetByIdAsync(request.Id, cancellationToken);
+        // ✅ CORREÇÃO: A propriedade no comando é "UnitId".
+        var unit = await _unitRepository.GetByIdAsync(request.UnitId);
 
-        if (unit == null)
+        if (unit is null)
         {
-            throw new KeyNotFoundException($"Unidade {request.Id} não encontrada.");
+            throw new KeyNotFoundException($"Unidade com ID {request.UnitId} não encontrada.");
         }
 
         unit.UpdateName(request.Name);
+        unit.UpdatedBy = request.UserId; // Preenche o campo de auditoria
 
         _unitRepository.Update(unit);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Unit.Value;
+        // ✅ CORREÇÃO: Um método com retorno "Task" não tem "return" de valor no final.
     }
 }

@@ -8,6 +8,7 @@ using Chronosystem.Application.Features.Units.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Chronosystem.Application.Features.Units.Commands.UpdateUnit;
+using Chronosystem.Application.Features.Units.Commands.DeleteUnit;
 
 namespace Chronosystem.Api.Controllers;
 
@@ -84,11 +85,13 @@ public class UnitsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUnit(Guid id)
     {
-        // TODO: Implementar DeleteUnitCommand e seu Handler.
-        // var command = new DeleteUnitCommand(id);
-        // await _mediator.Send(command);
+        // Cria o comando com o ID vindo da rota.
+        var command = new DeleteUnitCommand(id);
+        
+        // Envia o comando para o handler correspondente.
+        await _mediator.Send(command);
 
-        await Task.CompletedTask;
+        // Retorna 204 No Content, indicando sucesso na exclusão.
         return NoContent();
     }
 }
