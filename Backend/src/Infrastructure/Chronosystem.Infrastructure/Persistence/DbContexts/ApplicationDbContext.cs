@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     // --- DbSets ---
     // Apenas o DbSet para Unit está ativo para o teste do primeiro CRUD.
     public DbSet<Unit> Units { get; set; }
+    public DbSet<User> Users { get; set; }
 
     // Todas as outras entidades foram comentadas para evitar erros de compilação.
     // Você pode descomentá-las à medida que for criando as respectivas classes no Domain.
@@ -55,5 +56,9 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
         base.OnModelCreating(modelBuilder);
+        modelBuilder.HasPostgresEnum<UserRole>();
     }
+
+    // Chronosystem.Infrastructure/Persistence/DbContexts/ApplicationDbContext.cs
+    
 }
