@@ -68,14 +68,16 @@ public class UnitsController : ControllerBase
     /// Atualiza uma Unidade existente.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateUnit(Guid id, [FromBody] UpdateUnitDto dto)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUnitDto dto)
     {
-        await _mediator.Send(new UpdateUnitCommand(id, dto.Name));
+        // ⚙️ Recupera o ID do usuário autenticado (exemplo genérico)
+        var userId = Guid.TryParse(User?.FindFirst("sub")?.Value, out var uid) ? uid : Guid.Empty;
+
+        // Envia o comando completo com o UserId
+        await _mediator.Send(new UpdateUnitCommand(id, dto.Name, userId));
+
         return NoContent();
     }
-
 
     /// <summary>
     /// Exclui uma Unidade (soft delete).
@@ -83,15 +85,14 @@ public class UnitsController : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteUnit(Guid id)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DeleteUnit(Guid id, [FromQuery] Guid userId)
     {
-        // Cria o comando com o ID vindo da rota.
-        var command = new DeleteUnitCommand(id);
-        
-        // Envia o comando para o handler correspondente.
-        await _mediator.Send(command);
-
-        // Retorna 204 No Content, indicando sucesso na exclusão.
+        await _mediator.Send(new DeleteUnitCommand(id, userId));
         return NoContent();
     }
+
+
+
+
 }
