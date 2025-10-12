@@ -1,8 +1,8 @@
 using FluentValidation;
 
-namespace Chronosystem.Application.Features.Units.Commands.DeleteUnit;
+namespace Chronosystem.Application.Features.Scheduling.Units.Commands.DeleteUnit;
 
-public class DeleteUnitCommandValidator : AbstractValidator<DeleteUnitCommand>
+public sealed class DeleteUnitCommandValidator : AbstractValidator<DeleteUnitCommand>
 {
     public DeleteUnitCommandValidator()
     {

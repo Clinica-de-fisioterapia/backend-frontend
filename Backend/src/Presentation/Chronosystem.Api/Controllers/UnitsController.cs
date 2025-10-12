@@ -1,19 +1,21 @@
-using Chronosystem.Application.Features.Units.Commands.CreateUnit;
-using Chronosystem.Application.Features.Units.Queries.GetAllUnits;
-// TODO: Adicionar os usings para os outros Commands e Queries quando forem criados
-// using Chronosystem.Application.Features.Units.Commands.UpdateUnit;
-// using Chronosystem.Application.Features.Units.Commands.DeleteUnit;
-// using Chronosystem.Application.Features.Units.Queries.GetUnitById;
-using Chronosystem.Application.Features.Units.DTOs;
+using System;
+using System.Security.Claims;
+using Chronosystem.Application.Features.Scheduling.Units.Commands.CreateUnit;
+using Chronosystem.Application.Features.Scheduling.Units.Commands.DeleteUnit;
+using Chronosystem.Application.Features.Scheduling.Units.Commands.UpdateUnit;
+using Chronosystem.Application.Features.Scheduling.Units.DTOs;
+using Chronosystem.Application.Features.Scheduling.Units.Queries.GetAllUnits;
+using Chronosystem.Application.Features.Scheduling.Units.Queries.GetUnitById;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Chronosystem.Application.Features.Units.Commands.UpdateUnit;
-using Chronosystem.Application.Features.Units.Commands.DeleteUnit;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace Chronosystem.Api.Controllers;
 
+[Authorize]
 [ApiController]
-[Route("api/[controller]")] // Rota base: /api/units
+[Route("api/v1/scheduling/units")]
 public class UnitsController : ControllerBase
 {
     private readonly ISender _mediator;
@@ -29,8 +31,10 @@ public class UnitsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(UnitDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateUnit([FromBody] CreateUnitCommand command)
+    public async Task<IActionResult> CreateUnit([FromBody] CreateUnitDto request)
     {
+        var userId = GetCurrentUserId();
+        var command = new CreateUnitCommand(request.Name, userId);
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetUnitById), new { id = result.Id }, result);
     }
@@ -42,7 +46,6 @@ public class UnitsController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<UnitDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllUnits()
     {
-        // Esta chamada agora executa a busca real no banco de dados.
         var result = await _mediator.Send(new GetAllUnitsQuery());
         return Ok(result);
     }
@@ -55,13 +58,9 @@ public class UnitsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUnitById(Guid id)
     {
-        // TODO: Implementar GetUnitByIdQuery e GetUnitByIdQueryHandler.
-        // var query = new GetUnitByIdQuery(id);
-        // var result = await _mediator.Send(query);
-        // return result is not null ? Ok(result) : NotFound();
+        var result = await _mediator.Send(new GetUnitByIdQuery(id));
 
-        await Task.CompletedTask;
-        return Ok(new UnitDto(id, "Unidade de Teste (GET por ID)", DateTime.UtcNow, DateTime.UtcNow));
+        return result is not null ? Ok(result) : NotFound();
     }
 
     /// <summary>
@@ -70,10 +69,8 @@ public class UnitsController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUnitDto dto)
     {
-        // ⚙️ Recupera o ID do usuário autenticado (exemplo genérico)
-        var userId = Guid.TryParse(User?.FindFirst("sub")?.Value, out var uid) ? uid : Guid.Empty;
+        var userId = GetCurrentUserId();
 
-        // Envia o comando completo com o UserId
         await _mediator.Send(new UpdateUnitCommand(id, dto.Name, userId));
 
         return NoContent();
@@ -86,13 +83,19 @@ public class UnitsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> DeleteUnit(Guid id, [FromQuery] Guid userId)
+    public async Task<IActionResult> DeleteUnit(Guid id)
     {
+        var userId = GetCurrentUserId();
+
         await _mediator.Send(new DeleteUnitCommand(id, userId));
         return NoContent();
     }
+    private Guid GetCurrentUserId()
+    {
+        var subject = User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? User?.FindFirstValue("sub");
 
-
-
-
+        return Guid.TryParse(subject, out var userId)
+            ? userId
+            : throw new UnauthorizedAccessException("Usuário não autenticado.");
+    }
 }

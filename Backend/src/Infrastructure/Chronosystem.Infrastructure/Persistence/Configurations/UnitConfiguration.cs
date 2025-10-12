@@ -1,4 +1,4 @@
-using Chronosystem.Domain.Entities;
+using Chronosystem.Domain.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

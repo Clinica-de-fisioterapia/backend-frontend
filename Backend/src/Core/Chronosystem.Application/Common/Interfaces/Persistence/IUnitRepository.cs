@@ -1,4 +1,7 @@
-using Chronosystem.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Chronosystem.Domain.Scheduling;
 
 namespace Chronosystem.Application.Common.Interfaces.Persistence;
 
@@ -8,6 +11,5 @@ public interface IUnitRepository
     Task<IEnumerable<Unit>> GetAllByTenantAsync(CancellationToken cancellationToken = default);
     Task<Unit?> GetByIdAsync(Guid unitId, CancellationToken cancellationToken = default);
     Task<bool> UnitNameExistsAsync(string name, CancellationToken cancellationToken = default);
-    void Remove(Unit unit);
     void Update(Unit unit);
 }

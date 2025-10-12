@@ -1,4 +1,4 @@
-namespace Chronosystem.Application.Features.Units.DTOs;
+namespace Chronosystem.Application.Features.Scheduling.Units.DTOs;
 
 public class UpdateUnitDto
 {

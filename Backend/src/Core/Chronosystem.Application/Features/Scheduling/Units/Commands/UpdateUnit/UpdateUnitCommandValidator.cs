@@ -1,8 +1,8 @@
 using FluentValidation;
 
-namespace Chronosystem.Application.Features.Units.Commands.UpdateUnit;
+namespace Chronosystem.Application.Features.Scheduling.Units.Commands.UpdateUnit;
 
-public class UpdateUnitCommandValidator : AbstractValidator<UpdateUnitCommand>
+public sealed class UpdateUnitCommandValidator : AbstractValidator<UpdateUnitCommand>
 {
     public UpdateUnitCommandValidator()
     {
@@ -17,8 +17,8 @@ public class UpdateUnitCommandValidator : AbstractValidator<UpdateUnitCommand>
             .WithMessage("O nome da unidade é obrigatório.")
             .MinimumLength(3)
             .WithMessage("O nome da unidade deve ter pelo menos 3 caracteres.")
-            .MaximumLength(100)
-            .WithMessage("O nome da unidade deve ter no máximo 100 caracteres.");
+            .MaximumLength(255)
+            .WithMessage("O nome da unidade deve ter no máximo 255 caracteres.");
 
         // ID do usuário (auditoria)
         RuleFor(x => x.UserId)
