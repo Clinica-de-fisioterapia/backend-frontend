@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace Chronosystem.Application.Features.Units.Commands.DeleteUnit;
 
-public class DeleteUnitCommandValidator : AbstractValidator<DeleteUnitCommand>
+public sealed class DeleteUnitCommandValidator : AbstractValidator<DeleteUnitCommand>
 {
     public DeleteUnitCommandValidator()
     {
@@ -10,4 +10,3 @@ public class DeleteUnitCommandValidator : AbstractValidator<DeleteUnitCommand>
         RuleFor(x => x.UserId).NotEmpty().WithMessage("O ID do usuário é obrigatório.");
     }
 }
-

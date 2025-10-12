@@ -1,14 +1,28 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Domain.Entities;
 using MediatR;
+
 namespace Chronosystem.Application.Features.Users.Commands.UpdateUser;
 
-public class UpdateUserCommandHandler(IUserRepository userRepository) : IRequestHandler<UpdateUserCommand>
+public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand>
 {
-    public async Task Handle(UpdateUserCommand request, CancellationToken cancellationToken)
+    private readonly IUserRepository _userRepository;
+
+    public UpdateUserCommandHandler(IUserRepository userRepository)
     {
-        var user = await userRepository.GetByIdAsync(request.UserId, request.TenantId);
-        if (user is null) { throw new Exception("Usuário não encontrado."); }
+        _userRepository = userRepository;
+    }
+
+    public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetByIdAsync(request.UserId, request.TenantId);
+        if (user is null)
+        {
+            throw new Exception("Usuário não encontrado.");
+        }
 
         if (!Enum.TryParse<UserRole>(request.Role, true, out var userRole))
         {
@@ -20,7 +34,9 @@ public class UpdateUserCommandHandler(IUserRepository userRepository) : IRequest
         user.IsActive = request.IsActive;
         user.UpdatedBy = request.UpdatedByUserId;
 
-        userRepository.Update(user);
-        await userRepository.SaveChangesAsync();
+        _userRepository.Update(user);
+        await _userRepository.SaveChangesAsync();
+
+        return Unit.Value;
     }
 }

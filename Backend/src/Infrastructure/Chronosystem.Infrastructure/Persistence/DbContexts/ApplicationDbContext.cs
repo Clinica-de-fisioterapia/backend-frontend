@@ -2,6 +2,7 @@
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Domain.Entities;
+using DomainUnit = Chronosystem.Domain.Units.Unit;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using EFCore.NamingConventions;
@@ -17,7 +18,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
     // --- DbSets ---
     // Apenas o DbSet para Unit está ativo para o teste do primeiro CRUD.
-    public DbSet<Unit> Units { get; set; }
+    public DbSet<DomainUnit> Units { get; set; }
     public DbSet<User> Users { get; set; }
 
     // Todas as outras entidades foram comentadas para evitar erros de compilação.
