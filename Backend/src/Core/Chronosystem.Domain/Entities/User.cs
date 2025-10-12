@@ -75,7 +75,7 @@ public class User : AuditableEntity
 
     public void UpdateRole(UserRole newrole)
     {
-        Role = newrole
+        Role = newrole;
     }
     
     public void SoftDelete()

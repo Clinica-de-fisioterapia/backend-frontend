@@ -1,8 +1,10 @@
 using System.Threading;
+using System.Threading.Tasks;
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Application.Features.Units.DTOs;
-using Chronosystem.Domain.Units;
 using MediatR;
+
+using DomainUnit = Chronosystem.Domain.Units.Unit;
 
 namespace Chronosystem.Application.Features.Units.Commands.CreateUnit;
 
@@ -19,7 +21,7 @@ public sealed class CreateUnitCommandHandler : IRequestHandler<CreateUnitCommand
 
     public async Task<UnitDto> Handle(CreateUnitCommand request, CancellationToken cancellationToken)
     {
-        var unit = Unit.Create(request.Name, request.UserId);
+        var unit = DomainUnit.Create(request.Name, request.UserId);
 
         await _unitRepository.AddAsync(unit, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

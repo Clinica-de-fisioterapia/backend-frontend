@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Chronosystem.Domain.Units;
+using System.Threading.Tasks;
+using DomainUnit = Chronosystem.Domain.Units.Unit;
 
 namespace Chronosystem.Application.Common.Interfaces.Persistence;
 
 public interface IUnitRepository
 {
-    Task AddAsync(Unit unit, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Unit>> GetAllByTenantAsync(CancellationToken cancellationToken = default);
-    Task<Unit?> GetByIdAsync(Guid unitId, CancellationToken cancellationToken = default);
+    Task AddAsync(DomainUnit unit, CancellationToken cancellationToken = default);
+    Task<IEnumerable<DomainUnit>> GetAllByTenantAsync(CancellationToken cancellationToken = default);
+    Task<DomainUnit?> GetByIdAsync(Guid unitId, CancellationToken cancellationToken = default);
     Task<bool> UnitNameExistsAsync(string name, CancellationToken cancellationToken = default);
-    void Update(Unit unit);
+    void Update(DomainUnit unit);
 }

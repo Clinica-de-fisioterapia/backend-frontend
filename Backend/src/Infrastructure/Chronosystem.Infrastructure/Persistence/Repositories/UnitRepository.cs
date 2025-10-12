@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Chronosystem.Application.Common.Interfaces.Persistence;
-using Chronosystem.Domain.Units;
 using Chronosystem.Infrastructure.Persistence.DbContexts;
 using Microsoft.EntityFrameworkCore;
+
+using DomainUnit = Chronosystem.Domain.Units.Unit;
 
 namespace Chronosystem.Infrastructure.Persistence.Repositories;
 
@@ -18,12 +20,12 @@ public sealed class UnitRepository : IUnitRepository
         _dbContext = dbContext;
     }
 
-    public async Task AddAsync(Unit unit, CancellationToken cancellationToken = default)
+    public async Task AddAsync(DomainUnit unit, CancellationToken cancellationToken = default)
     {
         await _dbContext.Units.AddAsync(unit, cancellationToken);
     }
 
-    public async Task<IEnumerable<Unit>> GetAllByTenantAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<DomainUnit>> GetAllByTenantAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.Units
             .Where(u => u.DeletedAt == null)
@@ -31,7 +33,7 @@ public sealed class UnitRepository : IUnitRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Unit?> GetByIdAsync(Guid unitId, CancellationToken cancellationToken = default)
+    public async Task<DomainUnit?> GetByIdAsync(Guid unitId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Units
             .FirstOrDefaultAsync(u => u.Id == unitId && u.DeletedAt == null, cancellationToken);
@@ -45,7 +47,7 @@ public sealed class UnitRepository : IUnitRepository
             .AnyAsync(u => EF.Functions.ILike(u.Name, normalizedName) && u.DeletedAt == null, cancellationToken);
     }
 
-    public void Update(Unit unit)
+    public void Update(DomainUnit unit)
     {
         _dbContext.Units.Update(unit);
     }
