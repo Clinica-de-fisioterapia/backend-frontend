@@ -28,14 +28,14 @@ public class UsersController(ISender mediator) : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserDto createUserDto)
     {
-        var (tenantId, _) = GetUserClaims();
+        var (_, createdByUserId) = GetUserClaims();
         var command = new CreateUserCommand(
             createUserDto.FullName,
             createUserDto.Email,
             createUserDto.Password,
             createUserDto.Role,
-            tenantId);
-            
+            createdByUserId);
+
         var result = await mediator.Send(command);
         return CreatedAtAction(nameof(GetUserById), new { userId = result.Id }, result);
     }
@@ -44,8 +44,7 @@ public class UsersController(ISender mediator) : ControllerBase
     [Authorize(Roles = "Admin,Receptionist")]
     public async Task<IActionResult> GetAllUsers()
     {
-        var (tenantId, _) = GetUserClaims();
-        var query = new GetAllUsersByTenantQuery(tenantId);
+        var query = new GetAllUsersByTenantQuery();
         var users = await mediator.Send(query);
         return Ok(users);
     }
@@ -54,8 +53,7 @@ public class UsersController(ISender mediator) : ControllerBase
     [Authorize(Roles = "Admin,Receptionist")]
     public async Task<IActionResult> GetUserById(Guid userId)
     {
-        var (tenantId, _) = GetUserClaims();
-        var query = new GetUserByIdQuery(userId, tenantId);
+        var query = new GetUserByIdQuery(userId);
         var user = await mediator.Send(query);
         return user is not null ? Ok(user) : NotFound();
     }
@@ -64,13 +62,12 @@ public class UsersController(ISender mediator) : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] UpdateUserDto updateUserDto)
     {
-        var (tenantId, updatedByUserId) = GetUserClaims();
+        var (_, updatedByUserId) = GetUserClaims();
         var command = new UpdateUserCommand(
             userId,
             updateUserDto.FullName,
             updateUserDto.Role,
             updateUserDto.IsActive,
-            tenantId,
             updatedByUserId);
 
         await mediator.Send(command);
@@ -81,8 +78,8 @@ public class UsersController(ISender mediator) : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(Guid userId)
     {
-        var (tenantId, _) = GetUserClaims();
-        var command = new DeleteUserCommand(userId, tenantId);
+        var (_, deletedByUserId) = GetUserClaims();
+        var command = new DeleteUserCommand(userId, deletedByUserId);
         await mediator.Send(command);
         return NoContent(); // Resposta padrão para DELETE bem-sucedido
     }

@@ -1,4 +1,4 @@
-// Features/Users/Commands/CreateUser/CreateUserCommandHandler.cs
+// Chronosystem.Application/Features/Users/Commands/CreateUserCommand.cs/CreateUserCommandHandler.cs
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Application.Features.Users.DTOs;
 using Chronosystem.Domain.Entities;
@@ -6,46 +6,27 @@ using MediatR;
 
 namespace Chronosystem.Application.Features.Users.Commands.CreateUser;
 
-public class CreateUserCommandHandler(IUserRepository userRepository) 
+public sealed class CreateUserCommandHandler(IUserRepository userRepository)
     : IRequestHandler<CreateUserCommand, UserDto>
 {
     public async Task<UserDto> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
-        // 1. Validar se o e-mail já existe para este tenant
-        if (await userRepository.UserExistsByEmailAsync(request.Email, request.TenantId))
+        if (await userRepository.UserExistsByEmailAsync(request.Email, cancellationToken))
         {
-            throw new Exception("Um usuário com este e-mail já existe."); // Usar exceções customizadas é melhor
+            throw new InvalidOperationException("Um usuário com este e-mail já existe.");
         }
-        
-        // 2. Hashear a senha
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-        
-        // 3. Mapear o Role (string) para o Enum
+
         if (!Enum.TryParse<UserRole>(request.Role, true, out var userRole))
         {
-            throw new Exception("Role inválido.");
+            throw new ArgumentException("Role inválida para o usuário.", nameof(request.Role));
         }
 
-        // 4. Criar a entidade
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            TenantId = request.TenantId,
-            FullName = request.FullName,
-            Email = request.Email,
-            PasswordHash = passwordHash,
-            Role = userRole,
-            IsActive = true,
-            RowVersion = 1,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        var user = User.Create(request.FullName, request.Email, passwordHash, userRole, request.CreatedByUserId);
 
-        // 5. Persistir no banco
-        await userRepository.AddAsync(user);
-        await userRepository.SaveChangesAsync();
+        await userRepository.AddAsync(user, cancellationToken);
+        await userRepository.SaveChangesAsync(cancellationToken);
 
-        // 6. Retornar o DTO
         return new UserDto(user.Id, user.FullName, user.Email, user.Role.ToString(), user.IsActive);
     }
 }

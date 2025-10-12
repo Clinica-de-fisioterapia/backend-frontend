@@ -1,4 +1,4 @@
-using Chronosystem.Domain.Common; // Garanta que o namespace está correto
+using Chronosystem.Domain.Common;
 
 namespace Chronosystem.Domain.Entities;
 
@@ -9,77 +9,140 @@ public enum UserRole
     Receptionist
 }
 
-public class User : AuditableEntity
+public sealed class User : AuditableEntity
 {
     public string FullName { get; private set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
-    public UserRole Role { get; set; }
-    public bool IsActive { get; set; }
-    public long RowVersion { get; set; }
+    public string Email { get; private set; } = string.Empty;
+    public string PasswordHash { get; private set; } = string.Empty;
+    public UserRole Role { get; private set; }
+    public bool IsActive { get; private set; }
+    public long RowVersion { get; private set; }
 
-    // Construtor privado para o EF Core
-    private User() { }
+    private User()
+    {
+    }
 
- 
-    public static User Create(string name, string email, string passwordhash, UserRole role)
+    private User(Guid id, string fullName, string email, string passwordHash, UserRole role, Guid createdBy)
+    {
+        Id = id;
+        FullName = fullName;
+        Email = email;
+        PasswordHash = passwordHash;
+        Role = role;
+        IsActive = true;
+        RowVersion = 1;
+        CreatedAt = DateTime.UtcNow;
+        UpdatedAt = CreatedAt;
+        CreatedBy = createdBy;
+        UpdatedBy = createdBy;
+    }
+
+    public static User Create(string name, string email, string passwordHash, UserRole role, Guid createdBy)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException("O nome da unidade não pode ser nulo ou vazio.", nameof(name));
+            throw new ArgumentException("O nome do usuário não pode ser nulo ou vazio.", nameof(name));
         }
 
-        if(string.IsNullOrWhiteSpace(email))
+        if (string.IsNullOrWhiteSpace(email))
         {
-            throw new ArgumentException("O e-mail da unidade não pode ser nulo ou vazio.", nameof(email));
+            throw new ArgumentException("O e-mail do usuário não pode ser nulo ou vazio.", nameof(email));
         }
 
-        if(string.IsNullOrWhiteSpace(passwordhash))
+        if (string.IsNullOrWhiteSpace(passwordHash))
         {
-            throw new ArgumentException("A senha da unidade não pode ser nulo ou vazio.", nameof(passwordhash));
+            throw new ArgumentException("O hash da senha não pode ser nulo ou vazio.", nameof(passwordHash));
         }
 
-        return new User
-        {
-            Id = Guid.NewGuid(),
-            FullName = name,
-            Email = email,
-            PasswordHash = passwordhash,
-            Role = role
-        };
+        var normalizedName = name.Trim();
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        return new User(Guid.NewGuid(), normalizedName, normalizedEmail, passwordHash, role, createdBy);
     }
 
-    public void UpdateName(string newName)
+    public void UpdateName(string newName, Guid updatedBy)
     {
-        if (!string.IsNullOrWhiteSpace(newName))
+        if (string.IsNullOrWhiteSpace(newName))
         {
-            FullName = newName;
+            throw new ArgumentException("O nome do usuário não pode ser nulo ou vazio.", nameof(newName));
         }
+
+        var normalized = newName.Trim();
+        if (string.Equals(FullName, normalized, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        FullName = normalized;
+        Touch(updatedBy);
     }
 
-    public void UpadateEmail(string newemail)
+    public void UpdateEmail(string newEmail, Guid updatedBy)
     {
-        if (!string.IsNullOrWhiteSpace(newemail))
+        if (string.IsNullOrWhiteSpace(newEmail))
         {
-            Email = newemail;
+            throw new ArgumentException("O e-mail do usuário não pode ser nulo ou vazio.", nameof(newEmail));
         }
+
+        var normalized = newEmail.Trim().ToLowerInvariant();
+        if (string.Equals(Email, normalized, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Email = normalized;
+        Touch(updatedBy);
     }
 
-    public void UpdatePassword(string newpasswordhash)
+    public void UpdatePassword(string newPasswordHash, Guid updatedBy)
     {
-        if (!string.IsNullOrWhiteSpace(newpasswordhash))
+        if (string.IsNullOrWhiteSpace(newPasswordHash))
         {
-            PasswordHash = newpasswordhash;
+            throw new ArgumentException("O hash da senha não pode ser nulo ou vazio.", nameof(newPasswordHash));
         }
+
+        PasswordHash = newPasswordHash;
+        Touch(updatedBy);
     }
 
-    public void UpdateRole(UserRole newrole)
+    public void UpdateRole(UserRole newRole, Guid updatedBy)
     {
-        Role = newrole
+        if (Role == newRole)
+        {
+            return;
+        }
+
+        Role = newRole;
+        Touch(updatedBy);
     }
-    
-    public void SoftDelete()
+
+    public void SetActiveStatus(bool isActive, Guid updatedBy)
     {
+        if (IsActive == isActive)
+        {
+            return;
+        }
+
+        IsActive = isActive;
+        Touch(updatedBy);
+    }
+
+    public void SoftDelete(Guid deletedBy)
+    {
+        if (DeletedAt.HasValue)
+        {
+            return;
+        }
+
         DeletedAt = DateTime.UtcNow;
+        Touch(deletedBy);
+        UpdatedAt = DeletedAt.Value;
+    }
+
+    private void Touch(Guid updatedBy)
+    {
+        UpdatedAt = DateTime.UtcNow;
+        UpdatedBy = updatedBy;
+        RowVersion++;
     }
 }

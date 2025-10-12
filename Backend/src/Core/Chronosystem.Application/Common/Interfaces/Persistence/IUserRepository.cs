@@ -1,14 +1,14 @@
-// Chronosystem.Application/Common/Interfaces/Persistence/IUserRepository.cs
 using Chronosystem.Domain.Entities;
 
 namespace Chronosystem.Application.Common.Interfaces.Persistence;
 
 public interface IUserRepository
 {
-    Task<User?> GetUserByEmailAsync(string email);
-    Task<User?> GetByIdAsync(Guid userId, Guid tenantId);
-    Task<IEnumerable<User>> GetAllByTenantAsync(Guid tenantId);
-    Task AddAsync(User user);
-    Task<bool> UserExistsByEmailAsync(string email, Guid tenantId);
-    Task<int> SaveChangesAsync();
+    Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task AddAsync(User user, CancellationToken cancellationToken = default);
+    Task<bool> UserExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
+    void Update(User user);
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

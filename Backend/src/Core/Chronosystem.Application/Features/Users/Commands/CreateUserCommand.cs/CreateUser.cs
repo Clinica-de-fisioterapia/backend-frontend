@@ -1,11 +1,12 @@
-// Features/Users/Commands/CreateUser/CreateUserCommand.cs
+// Chronosystem.Application/Features/Users/Commands/CreateUserCommand.cs/CreateUser.cs
 using Chronosystem.Application.Features.Users.DTOs;
 using MediatR;
 
 namespace Chronosystem.Application.Features.Users.Commands.CreateUser;
 
-public record CreateUserCommand(
+public sealed record CreateUserCommand(
     string FullName,
     string Email,
     string Password,
-    string Role) : IRequest<UserDto>;
+    string Role,
+    Guid CreatedByUserId) : IRequest<UserDto>;

@@ -1,16 +1,22 @@
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using MediatR;
+
 namespace Chronosystem.Application.Features.Users.Commands.DeleteUser;
 
-public class DeleteUserCommandHandler(IUserRepository userRepository) : IRequestHandler<DeleteUserCommand>
+public sealed class DeleteUserCommandHandler(IUserRepository userRepository) : IRequestHandler<DeleteUserCommand>
 {
-    public async Task Handle(DeleteUserCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByIdAsync(request.UserId, request.TenantId);
-        if (user is not null)
+        var user = await userRepository.GetByIdAsync(request.UserId, cancellationToken);
+        if (user is null)
         {
-            userRepository.Remove(user); // Soft delete
-            await userRepository.SaveChangesAsync();
+            return Unit.Value;
         }
+
+        user.SoftDelete(request.DeletedByUserId);
+        userRepository.Update(user);
+        await userRepository.SaveChangesAsync(cancellationToken);
+
+        return Unit.Value;
     }
 }

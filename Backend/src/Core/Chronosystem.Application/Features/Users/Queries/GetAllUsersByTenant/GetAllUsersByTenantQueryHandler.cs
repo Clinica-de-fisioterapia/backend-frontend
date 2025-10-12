@@ -1,15 +1,16 @@
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Application.Features.Users.DTOs;
 using MediatR;
+
 namespace Chronosystem.Application.Features.Users.Queries.GetAllUsersByTenant;
 
-public class GetAllUsersByTenantQueryHandler(IUserRepository userRepository) : IRequestHandler<GetAllUsersByTenantQuery, IEnumerable<UserDto>>
+public sealed class GetAllUsersByTenantQueryHandler(IUserRepository userRepository)
+    : IRequestHandler<GetAllUsersByTenantQuery, IEnumerable<UserDto>>
 {
     public async Task<IEnumerable<UserDto>> Handle(GetAllUsersByTenantQuery request, CancellationToken cancellationToken)
     {
-        var users = await userRepository.GetAllByTenantAsync(request.TenantId);
+        var users = await userRepository.GetAllAsync(cancellationToken);
 
-        return users.Select(user => 
-            new UserDto(user.Id, user.FullName, user.Email, user.Role.ToString(), user.IsActive));
+        return users.Select(user => new UserDto(user.Id, user.FullName, user.Email, user.Role.ToString(), user.IsActive));
     }
 }

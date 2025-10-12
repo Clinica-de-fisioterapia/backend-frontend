@@ -5,46 +5,43 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronosystem.Infrastructure.Persistence.Repositories;
 
-public class UserRepository(ApplicationDbContext dbContext) : IUserRepository
+public sealed class UserRepository(ApplicationDbContext dbContext) : IUserRepository
 {
     private readonly ApplicationDbContext _dbContext = dbContext;
 
-    public async Task AddAsync(User user)
+    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
-        await _dbContext.Users.AddAsync(user);
+        await _dbContext.Users.AddAsync(user, cancellationToken);
     }
 
-    public async Task<IEnumerable<User>> GetAllByTenantAsync(Guid tenantId)
+    public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users
-            .AsNoTracking() // Melhora a performance em queries de apenas leitura
-            .Where(u => u.TenantId == tenantId && u.DeletedAt == null)
-            .ToListAsync();
+            .AsNoTracking()
+            .Where(u => u.DeletedAt == null)
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<User?> GetByIdAsync(Guid userId, Guid tenantId)
+    public async Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users
-            .FirstOrDefaultAsync(u => u.Id == userId && u.TenantId == tenantId && u.DeletedAt == null);
+            .FirstOrDefaultAsync(u => u.Id == userId && u.DeletedAt == null, cancellationToken);
     }
 
-    public async Task<User?> GetUserByEmailAsync(string email)
+    public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
+        var normalizedEmail = NormalizeEmail(email);
+
         return await _dbContext.Users
-            .FirstOrDefaultAsync(u => u.Email == email && u.DeletedAt == null);
-    }
-    
-    public async Task<bool> UserExistsByEmailAsync(string email, Guid tenantId)
-    {
-        return await _dbContext.Users
-            .AnyAsync(u => u.Email == email && u.TenantId == tenantId && u.DeletedAt == null);
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.DeletedAt == null, cancellationToken);
     }
 
-    public void Remove(User user)
+    public async Task<bool> UserExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        // Implementação de Soft Delete
-        user.DeletedAt = DateTime.UtcNow;
-        _dbContext.Users.Update(user);
+        var normalizedEmail = NormalizeEmail(email);
+
+        return await _dbContext.Users
+            .AnyAsync(u => u.Email == normalizedEmail && u.DeletedAt == null, cancellationToken);
     }
 
     public void Update(User user)
@@ -52,8 +49,10 @@ public class UserRepository(ApplicationDbContext dbContext) : IUserRepository
         _dbContext.Users.Update(user);
     }
 
-    public Task<int> SaveChangesAsync()
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return _dbContext.SaveChangesAsync();
+        return _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }
