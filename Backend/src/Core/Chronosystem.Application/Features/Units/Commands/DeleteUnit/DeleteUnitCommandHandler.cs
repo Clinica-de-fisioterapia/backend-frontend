@@ -1,12 +1,13 @@
-using Chronosystem.Application.Common.Interfaces.Persistence;
-using MediatR;
+using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
+using Chronosystem.Application.Common.Interfaces.Persistence;
+using Chronosystem.Domain.Units;
+using MediatR;
 
 namespace Chronosystem.Application.Features.Units.Commands.DeleteUnit;
 
-public class DeleteUnitCommandHandler : IRequestHandler<DeleteUnitCommand, Unit>
+public sealed class DeleteUnitCommandHandler : IRequestHandler<DeleteUnitCommand>
 {
     private readonly IUnitRepository _unitRepository;
     private readonly IUnitOfWork _unitOfWork;
@@ -17,18 +18,18 @@ public class DeleteUnitCommandHandler : IRequestHandler<DeleteUnitCommand, Unit>
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Unit> Handle(DeleteUnitCommand request, CancellationToken cancellationToken)
+    public async Task Handle(DeleteUnitCommand request, CancellationToken cancellationToken)
     {
         var unit = await _unitRepository.GetByIdAsync(request.UnitId, cancellationToken);
-        if (unit is null)
-            throw new KeyNotFoundException($"Unidade com ID {request.UnitId} não encontrada.");
 
-        unit.DeletedAt = DateTime.UtcNow;
-        unit.UpdatedBy = request.UserId;
+        if (unit is null)
+        {
+            throw new KeyNotFoundException($"Unidade com ID {request.UnitId} não encontrada.");
+        }
+
+        unit.SoftDelete(request.UserId);
 
         _unitRepository.Update(unit);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return Unit.Value; // <- casa com IRequest<Unit>
     }
 }

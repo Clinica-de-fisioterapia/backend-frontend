@@ -1,11 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using Chronosystem.Application.Common.Interfaces.Persistence;
-using Chronosystem.Domain.Entities;
+using Chronosystem.Domain.Units;
 using Chronosystem.Infrastructure.Persistence.DbContexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronosystem.Infrastructure.Persistence.Repositories;
 
-public class UnitRepository : IUnitRepository
+public sealed class UnitRepository : IUnitRepository
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -35,14 +39,10 @@ public class UnitRepository : IUnitRepository
 
     public async Task<bool> UnitNameExistsAsync(string name, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Units
-            .AnyAsync(u => u.Name.ToLower() == name.ToLower() && u.DeletedAt == null, cancellationToken);
-    }
+        var normalizedName = name.Trim();
 
-    public void Remove(Unit unit)
-    {
-        unit.SoftDelete();
-        _dbContext.Units.Update(unit);
+        return await _dbContext.Units
+            .AnyAsync(u => EF.Functions.ILike(u.Name, normalizedName) && u.DeletedAt == null, cancellationToken);
     }
 
     public void Update(Unit unit)
