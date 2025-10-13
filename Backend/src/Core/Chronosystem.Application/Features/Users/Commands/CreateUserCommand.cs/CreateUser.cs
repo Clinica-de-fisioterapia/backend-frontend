@@ -8,4 +8,6 @@ public record CreateUserCommand(
     string FullName,
     string Email,
     string Password,
-    string Role) : IRequest<UserDto>;
+    string Role,
+    Guid TenantId
+) : IRequest<UserDto>;

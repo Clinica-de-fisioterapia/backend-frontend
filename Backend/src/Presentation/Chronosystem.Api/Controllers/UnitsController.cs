@@ -1,98 +1,81 @@
-using Chronosystem.Application.Features.Units.Commands.CreateUnit;
-using Chronosystem.Application.Features.Units.Queries.GetAllUnits;
-// TODO: Adicionar os usings para os outros Commands e Queries quando forem criados
-// using Chronosystem.Application.Features.Units.Commands.UpdateUnit;
-// using Chronosystem.Application.Features.Units.Commands.DeleteUnit;
-// using Chronosystem.Application.Features.Units.Queries.GetUnitById;
+// ======================================================================================
+// ARQUIVO: UnitsController.cs
+// CAMADA: Interface / Controllers
+// OBJETIVO: Controlador REST responsável por gerenciar Unidades (Units).
+//            Aplica CQRS com MediatR, validações multilíngues e autorização por papéis.
+// ======================================================================================
+
 using Chronosystem.Application.Features.Units.DTOs;
+using Chronosystem.Application.Resources;
+using Chronosystem.Application.UseCases.Units.Commands.CreateUnit;
+using Chronosystem.Application.UseCases.Units.Commands.UpdateUnit;
+using Chronosystem.Application.UseCases.Units.Commands.DeleteUnit;
+using Chronosystem.Application.UseCases.Units.Queries.GetAllUnits;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Chronosystem.Application.Features.Units.Commands.UpdateUnit;
-using Chronosystem.Application.Features.Units.Commands.DeleteUnit;
 
 namespace Chronosystem.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] // Rota base: /api/units
+[Route("api/[controller]")]
+[Authorize] // Todos os endpoints exigem usuário autenticado
 public class UnitsController : ControllerBase
 {
-    private readonly ISender _mediator;
+    private readonly IMediator _mediator;
 
-    public UnitsController(ISender mediator)
+    public UnitsController(IMediator mediator)
     {
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Cria uma nova Unidade.
-    /// </summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(UnitDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateUnit([FromBody] CreateUnitCommand command)
-    {
-        var result = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetUnitById), new { id = result.Id }, result);
-    }
-
-    /// <summary>
-    /// Busca todas as Unidades do tenant.
-    /// </summary>
+    // -------------------------------------------------------------------------
+    // GET /api/units
+    // -------------------------------------------------------------------------
+    /// <summary>Lista todas as unidades ativas (não deletadas).</summary>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<UnitDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllUnits()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        // Esta chamada agora executa a busca real no banco de dados.
-        var result = await _mediator.Send(new GetAllUnitsQuery());
+        var result = await _mediator.Send(new GetAllUnitsQuery(), cancellationToken);
         return Ok(result);
     }
 
-    /// <summary>
-    /// Busca uma Unidade específica pelo seu ID.
-    /// </summary>
-    [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(UnitDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUnitById(Guid id)
+    // -------------------------------------------------------------------------
+    // POST /api/units
+    // -------------------------------------------------------------------------
+    /// <summary>Cria uma nova unidade (restrito a administradores).</summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateUnitCommand command, CancellationToken cancellationToken)
     {
-        // TODO: Implementar GetUnitByIdQuery e GetUnitByIdQueryHandler.
-        // var query = new GetUnitByIdQuery(id);
-        // var result = await _mediator.Send(query);
-        // return result is not null ? Ok(result) : NotFound();
-
-        await Task.CompletedTask;
-        return Ok(new UnitDto(id, "Unidade de Teste (GET por ID)", DateTime.UtcNow, DateTime.UtcNow));
+        var created = await _mediator.Send(command, cancellationToken);
+        return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
     }
 
-    /// <summary>
-    /// Atualiza uma Unidade existente.
-    /// </summary>
+    // -------------------------------------------------------------------------
+    // PUT /api/units/{id}
+    // -------------------------------------------------------------------------
+    /// <summary>Atualiza uma unidade existente.</summary>
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUnitDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUnitCommand command, CancellationToken cancellationToken)
     {
-        // ⚙️ Recupera o ID do usuário autenticado (exemplo genérico)
-        var userId = Guid.TryParse(User?.FindFirst("sub")?.Value, out var uid) ? uid : Guid.Empty;
+        if (id != command.Id)
+            return BadRequest(Messages.Validation_Id_Mismatch);
 
-        // Envia o comando completo com o UserId
-        await _mediator.Send(new UpdateUnitCommand(id, dto.Name, userId));
-
-        return NoContent();
+        var updated = await _mediator.Send(command, cancellationToken);
+        return Ok(updated);
     }
 
-    /// <summary>
-    /// Exclui uma Unidade (soft delete).
-    /// </summary>
+    // -------------------------------------------------------------------------
+    // DELETE /api/units/{id}
+    // -------------------------------------------------------------------------
+    /// <summary>Realiza exclusão lógica (soft delete) de uma unidade.</summary>
     [HttpDelete("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> DeleteUnit(Guid id, [FromQuery] Guid userId)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(Guid id, [FromQuery] Guid userId, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteUnitCommand(id, userId));
+        await _mediator.Send(new DeleteUnitCommand(id, userId), cancellationToken);
         return NoContent();
     }
-
-
-
-
 }

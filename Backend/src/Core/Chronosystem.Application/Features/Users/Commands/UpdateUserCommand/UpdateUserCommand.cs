@@ -1,4 +1,5 @@
 using MediatR;
+
 namespace Chronosystem.Application.Features.Users.Commands.UpdateUser;
 
 public record UpdateUserCommand(
@@ -6,4 +7,5 @@ public record UpdateUserCommand(
     string FullName,
     string Role,
     bool IsActive,
-    Guid UpdatedByUserId) : IRequest;
+    Guid TenantId,          
+    Guid UpdatedByUserId) : IRequest<Unit>;

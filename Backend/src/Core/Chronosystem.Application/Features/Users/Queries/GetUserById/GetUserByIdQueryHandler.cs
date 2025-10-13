@@ -1,9 +1,12 @@
+// Features/Users/Queries/GetUserById/GetUserByIdQueryHandler.cs
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Application.Features.Users.DTOs;
 using MediatR;
+
 namespace Chronosystem.Application.Features.Users.Queries.GetUserById;
 
-public class GetUserByIdQueryHandler(IUserRepository userRepository) : IRequestHandler<GetUserByIdQuery, UserDto?>
+public class GetUserByIdQueryHandler(IUserRepository userRepository)
+    : IRequestHandler<GetUserByIdQuery, UserDto?>
 {
     public async Task<UserDto?> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
     {

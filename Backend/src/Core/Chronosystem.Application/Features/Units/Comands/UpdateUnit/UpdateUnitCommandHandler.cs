@@ -1,33 +1,60 @@
+// ======================================================================================
+// ARQUIVO: UpdateUnitCommandHandler.cs
+// CAMADA: Application / UseCases / Units / Commands / UpdateUnit
+// OBJETIVO: Executa o caso de uso de atualização de uma unidade existente.
+//            Aplica CQRS com MediatR, validações multilíngues (.resx),
+//            e mapeamento de saída via Mapster.
+// ======================================================================================
+
 using Chronosystem.Application.Common.Interfaces.Persistence;
+using Chronosystem.Application.Features.Units.DTOs;
+using Chronosystem.Application.Resources;
+using Chronosystem.Domain.Entities;
+using Mapster;
 using MediatR;
-using System.Collections.Generic;
 
-namespace Chronosystem.Application.Features.Units.Commands.UpdateUnit;
+namespace Chronosystem.Application.UseCases.Units.Commands.UpdateUnit;
 
-public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand, Unit>
+public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand, UnitDto>
 {
     private readonly IUnitRepository _unitRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateUnitCommandHandler(IUnitRepository unitRepository, IUnitOfWork unitOfWork)
+    public UpdateUnitCommandHandler(IUnitRepository unitRepository)
     {
         _unitRepository = unitRepository;
-        _unitOfWork = unitOfWork;
     }
 
-    public async Task<Unit> Handle(UpdateUnitCommand request, CancellationToken cancellationToken)
+    public async Task<UnitDto> Handle(UpdateUnitCommand request, CancellationToken cancellationToken)
     {
-        var unit = await _unitRepository.GetByIdAsync(request.UnitId);
+        // ---------------------------------------------------------------------
+        // 1️⃣ Busca a unidade pelo ID
+        // ---------------------------------------------------------------------
+        var unit = await _unitRepository.GetByIdAsync(request.Id, cancellationToken);
 
         if (unit is null)
-            throw new KeyNotFoundException($"Unidade com ID {request.UnitId} não encontrada.");
+            throw new KeyNotFoundException(Messages.Unit_NotFound);
 
+        // ---------------------------------------------------------------------
+        // 2️⃣ Verifica se já existe outra unidade com o mesmo nome
+        // ---------------------------------------------------------------------
+        bool nameExists = await _unitRepository.UnitNameExistsAsync(request.Name, cancellationToken);
+        if (nameExists && !string.Equals(unit.Name, request.Name, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException(Messages.Unit_Name_AlreadyExists);
+
+        // ---------------------------------------------------------------------
+        // 3️⃣ Atualiza o nome (aplica regra de domínio)
+        // ---------------------------------------------------------------------
         unit.UpdateName(request.Name);
-        unit.UpdatedBy = request.UserId;
 
+        // ---------------------------------------------------------------------
+        // 4️⃣ Atualiza o registro no contexto e salva
+        // ---------------------------------------------------------------------
         _unitRepository.Update(unit);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitRepository.SaveChangesAsync(cancellationToken);
 
-        return Unit.Value;
+        // ---------------------------------------------------------------------
+        // 5️⃣ Retorna o resultado mapeado via Mapster
+        // ---------------------------------------------------------------------
+        return unit.Adapt<UnitDto>();
     }
 }

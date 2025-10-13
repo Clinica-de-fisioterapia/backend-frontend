@@ -1,9 +1,18 @@
+// ======================================================================================
+// ARQUIVO: GetAllUnitsQueryHandler.cs
+// CAMADA: Application / UseCases / Units / Queries / GetAllUnits
+// OBJETIVO: Executa a leitura de todas as unidades ativas (não deletadas),
+//            aplicando o padrão CQRS com MediatR, mapeamento via Mapster e
+//            mensagens multilíngues via .resx.
+// ======================================================================================
+
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Application.Features.Units.DTOs;
-using Mapster; // Adicionado para usar o método .Adapt<>()
+using Chronosystem.Application.Resources;
+using Mapster;
 using MediatR;
 
-namespace Chronosystem.Application.Features.Units.Queries.GetAllUnits;
+namespace Chronosystem.Application.UseCases.Units.Queries.GetAllUnits;
 
 public class GetAllUnitsQueryHandler : IRequestHandler<GetAllUnitsQuery, IEnumerable<UnitDto>>
 {
@@ -16,10 +25,20 @@ public class GetAllUnitsQueryHandler : IRequestHandler<GetAllUnitsQuery, IEnumer
 
     public async Task<IEnumerable<UnitDto>> Handle(GetAllUnitsQuery request, CancellationToken cancellationToken)
     {
-        // 1. Busca as entidades do banco de dados.
-        var units = await _unitRepository.GetAllByTenantAsync();
+        // ---------------------------------------------------------------------
+        // 1️⃣ Consulta todas as unidades não deletadas
+        // ---------------------------------------------------------------------
+        var units = await _unitRepository.GetAllAsync(cancellationToken);
 
-        // 2. Usa o Mapster para mapear a lista de entidades para uma lista de DTOs.
+        // ---------------------------------------------------------------------
+        // 2️⃣ Verifica se há registros
+        // ---------------------------------------------------------------------
+        if (!units.Any())
+            throw new KeyNotFoundException(Messages.Unit_List_Empty);
+
+        // ---------------------------------------------------------------------
+        // 3️⃣ Mapeia o resultado para DTOs via Mapster
+        // ---------------------------------------------------------------------
         return units.Adapt<IEnumerable<UnitDto>>();
     }
 }

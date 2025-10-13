@@ -16,6 +16,11 @@
         },
         "runtime": {
           "Chronosystem.Application.dll": {}
+        },
+        "resources": {
+          "en/Chronosystem.Application.resources.dll": {
+            "locale": "en"
+          }
         }
       },
       "FluentValidation/12.0.0": {

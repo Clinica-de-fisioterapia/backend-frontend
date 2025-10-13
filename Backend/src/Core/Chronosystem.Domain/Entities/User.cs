@@ -1,4 +1,4 @@
-using Chronosystem.Domain.Common; // Garanta que o namespace está correto
+using Chronosystem.Domain.Common;
 
 namespace Chronosystem.Domain.Entities;
 
@@ -11,6 +11,8 @@ public enum UserRole
 
 public class User : AuditableEntity
 {
+    public Guid TenantId { get; set; } // Multi-tenant support (repository uses it)
+
     public string FullName { get; private set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
@@ -18,26 +20,19 @@ public class User : AuditableEntity
     public bool IsActive { get; set; }
     public long RowVersion { get; set; }
 
-    // Construtor privado para o EF Core
+    // For EF Core
     private User() { }
 
- 
     public static User Create(string name, string email, string passwordhash, UserRole role)
     {
         if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("O nome da unidade não pode ser nulo ou vazio.", nameof(name));
-        }
+            throw new ArgumentException("O nome não pode ser nulo ou vazio.", nameof(name));
 
-        if(string.IsNullOrWhiteSpace(email))
-        {
-            throw new ArgumentException("O e-mail da unidade não pode ser nulo ou vazio.", nameof(email));
-        }
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("O e-mail não pode ser nulo ou vazio.", nameof(email));
 
-        if(string.IsNullOrWhiteSpace(passwordhash))
-        {
-            throw new ArgumentException("A senha da unidade não pode ser nulo ou vazio.", nameof(passwordhash));
-        }
+        if (string.IsNullOrWhiteSpace(passwordhash))
+            throw new ArgumentException("A senha não pode ser nula ou vazia.", nameof(passwordhash));
 
         return new User
         {
@@ -52,32 +47,26 @@ public class User : AuditableEntity
     public void UpdateName(string newName)
     {
         if (!string.IsNullOrWhiteSpace(newName))
-        {
             FullName = newName;
-        }
     }
 
-    public void UpadateEmail(string newemail)
+    public void UpadateEmail(string newemail) // keeping your original method name
     {
         if (!string.IsNullOrWhiteSpace(newemail))
-        {
             Email = newemail;
-        }
     }
 
     public void UpdatePassword(string newpasswordhash)
     {
         if (!string.IsNullOrWhiteSpace(newpasswordhash))
-        {
             PasswordHash = newpasswordhash;
-        }
     }
 
     public void UpdateRole(UserRole newrole)
     {
-        Role = newrole
+        Role = newrole;
     }
-    
+
     public void SoftDelete()
     {
         DeletedAt = DateTime.UtcNow;

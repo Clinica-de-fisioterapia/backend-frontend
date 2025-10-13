@@ -1,27 +1,33 @@
-using Chronosystem.Application.Common.Interfaces.Persistence;
+// ======================================================================================
+// ARQUIVO: CreateUnitCommandValidator.cs
+// CAMADA: Application / UseCases / Units / Commands / CreateUnit
+// OBJETIVO: Define as validações para o comando de criação de unidades.
+//            Utiliza FluentValidation com suporte a múltiplos idiomas via .resx.
+// ======================================================================================
+
+using Chronosystem.Application.Resources;
 using FluentValidation;
 
-namespace Chronosystem.Application.Features.Units.Commands.CreateUnit;
+namespace Chronosystem.Application.UseCases.Units.Commands.CreateUnit;
 
 public class CreateUnitCommandValidator : AbstractValidator<CreateUnitCommand>
 {
-    private readonly IUnitRepository _unitRepository;
-
-    public CreateUnitCommandValidator(IUnitRepository unitRepository)
+    public CreateUnitCommandValidator()
     {
-        _unitRepository = unitRepository;
-
+        // ---------------------------------------------------------------------
+        // Regra 1: Nome é obrigatório
+        // ---------------------------------------------------------------------
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("O nome da unidade é obrigatório.")
-            .MaximumLength(255).WithMessage("O nome da unidade não pode exceder 255 caracteres.")
-            .MustAsync(BeUniqueName).WithMessage("Já existe uma unidade com este nome.");
+            .NotEmpty()
+            .WithMessage(Messages.Unit_Name_Required)
+            .MaximumLength(255)
+            .WithMessage(Messages.Unit_Name_MaxLength);
 
+        // ---------------------------------------------------------------------
+        // Regra 2: Usuário responsável é obrigatório
+        // ---------------------------------------------------------------------
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("O ID do usuário é obrigatório.");
-    }
-
-    private async Task<bool> BeUniqueName(string name, CancellationToken cancellationToken)
-    {
-        return !await _unitRepository.UnitNameExistsAsync(name);
+            .NotEmpty()
+            .WithMessage(Messages.Validation_UserId_Required);
     }
 }

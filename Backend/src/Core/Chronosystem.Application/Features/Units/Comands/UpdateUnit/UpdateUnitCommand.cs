@@ -1,5 +1,16 @@
+// ======================================================================================
+// ARQUIVO: UpdateUnitCommand.cs
+// CAMADA: Application / UseCases / Units / Commands / UpdateUnit
+// OBJETIVO: Define o comando de atualização de uma unidade existente.
+//            Utiliza CQRS com MediatR para envio e processamento do comando.
+// ======================================================================================
+
+using Chronosystem.Application.Features.Units.DTOs;
 using MediatR;
 
-namespace Chronosystem.Application.Features.Units.Commands.UpdateUnit;
+namespace Chronosystem.Application.UseCases.Units.Commands.UpdateUnit;
 
-public record UpdateUnitCommand(Guid UnitId, string Name, Guid UserId) : IRequest<Unit>;
+/// <summary>
+/// Representa o comando de atualização de uma unidade existente.
+/// </summary>
+public record UpdateUnitCommand(Guid Id, string Name, Guid UserId) : IRequest<UnitDto>;

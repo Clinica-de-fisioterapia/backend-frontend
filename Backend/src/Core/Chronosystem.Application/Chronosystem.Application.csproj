@@ -17,4 +17,25 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- ============================================ -->
+  <!-- SUPORTE A RECURSOS MULTILÍNGUES (.resx) -->
+  <!-- ============================================ -->
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Messages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Messages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+
+    <Compile Update="Resources\Messages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Messages.resx</DependentUpon>
+    </Compile>
+
+    <EmbeddedResource Update="Resources\Messages.en.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <DependentUpon>Messages.resx</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

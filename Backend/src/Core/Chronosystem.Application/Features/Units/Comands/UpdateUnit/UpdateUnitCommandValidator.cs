@@ -1,28 +1,40 @@
+// ======================================================================================
+// ARQUIVO: UpdateUnitCommandValidator.cs
+// CAMADA: Application / UseCases / Units / Commands / UpdateUnit
+// OBJETIVO: Define as validações para o comando de atualização de unidades.
+//            Utiliza FluentValidation e mensagens multilíngues via .resx.
+// ======================================================================================
+
+using Chronosystem.Application.Resources;
 using FluentValidation;
 
-namespace Chronosystem.Application.Features.Units.Commands.UpdateUnit;
+namespace Chronosystem.Application.UseCases.Units.Commands.UpdateUnit;
 
 public class UpdateUnitCommandValidator : AbstractValidator<UpdateUnitCommand>
 {
     public UpdateUnitCommandValidator()
     {
-        // ID da unidade é obrigatório
-        RuleFor(x => x.UnitId)
+        // ---------------------------------------------------------------------
+        // Regra 1: ID da unidade é obrigatório
+        // ---------------------------------------------------------------------
+        RuleFor(x => x.Id)
             .NotEmpty()
-            .WithMessage("O ID da unidade é obrigatório.");
+            .WithMessage(Messages.Unit_Id_Required);
 
-        // Nome não pode ser vazio nem muito curto
+        // ---------------------------------------------------------------------
+        // Regra 2: Nome é obrigatório e deve ter no máximo 255 caracteres
+        // ---------------------------------------------------------------------
         RuleFor(x => x.Name)
             .NotEmpty()
-            .WithMessage("O nome da unidade é obrigatório.")
-            .MinimumLength(3)
-            .WithMessage("O nome da unidade deve ter pelo menos 3 caracteres.")
-            .MaximumLength(100)
-            .WithMessage("O nome da unidade deve ter no máximo 100 caracteres.");
+            .WithMessage(Messages.Unit_Name_Required)
+            .MaximumLength(255)
+            .WithMessage(Messages.Unit_Name_MaxLength);
 
-        // ID do usuário (auditoria)
+        // ---------------------------------------------------------------------
+        // Regra 3: Usuário responsável é obrigatório
+        // ---------------------------------------------------------------------
         RuleFor(x => x.UserId)
             .NotEmpty()
-            .WithMessage("O ID do usuário é obrigatório para auditoria.");
+            .WithMessage(Messages.Validation_UserId_Required);
     }
 }
