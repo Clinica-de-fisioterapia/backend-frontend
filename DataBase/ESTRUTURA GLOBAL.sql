@@ -23,11 +23,20 @@ BEGIN
     END IF;
 END$$;
 
--- 3. FUNÇÃO GLOBAL DE TRIGGER
+-- 3. FUNÇÕES GLOBAIS DE AUDITORIA
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ✅ Função global para SOFT DELETE (usada por todos os tenants)
+CREATE OR REPLACE FUNCTION public.set_deleted_at_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.deleted_at := NOW();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -56,6 +65,9 @@ CREATE TABLE IF NOT EXISTS public.tenants (
 );
 
 DROP TRIGGER IF EXISTS trg_tenants_updated ON public.tenants;
-CREATE TRIGGER trg_tenants_updated BEFORE UPDATE ON public.tenants FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER trg_tenants_updated 
+BEFORE UPDATE ON public.tenants 
+FOR EACH ROW 
+EXECUTE FUNCTION public.update_updated_at_column();
 
 -- ========================== FIM DA ESTRUTURA GLOBAL ==========================

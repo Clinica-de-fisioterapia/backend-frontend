@@ -28,7 +28,7 @@ public class Unit : AuditableEntity
 
     private Unit(string name)
     {
-        Name = name;
+        SetName(name);
     }
 
     // ----------------------------------------------------------------------------------
@@ -37,12 +37,11 @@ public class Unit : AuditableEntity
 
     /// <summary>
     /// Cria uma nova unidade com o nome especificado.
-    /// O Id é gerado automaticamente pelo banco de dados (gen_random_uuid()).
     /// </summary>
     public static Unit Create(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Unit name cannot be null or empty.", nameof(name));
+            throw new ArgumentException("O nome da unidade é obrigatório.", nameof(name));
 
         return new Unit(name);
     }
@@ -52,14 +51,22 @@ public class Unit : AuditableEntity
     // ----------------------------------------------------------------------------------
 
     /// <summary>
-    /// Atualiza o nome da unidade.
+    /// Atualiza o nome da unidade, garantindo consistência das regras de domínio.
     /// </summary>
     public void UpdateName(string newName)
     {
-        if (string.IsNullOrWhiteSpace(newName))
-            throw new ArgumentException("Unit name cannot be null or empty.", nameof(newName));
+        SetName(newName);
+    }
 
-        Name = newName;
+    private void SetName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException("O nome da unidade é obrigatório.", nameof(Name));
+
+        if (value.Length > 255)
+            throw new ArgumentException("O nome da unidade deve ter no máximo 255 caracteres.", nameof(Name));
+
+        Name = value.Trim();
     }
 
     /// <summary>
@@ -68,7 +75,7 @@ public class Unit : AuditableEntity
     /// </summary>
     public void SoftDelete()
     {
-        // Apenas sinaliza intenção de exclusão lógica.
+        // Apenas sinaliza a intenção de exclusão lógica.
         // O PostgreSQL definirá o timestamp (deleted_at) via trigger.
         DeletedAt = null;
     }

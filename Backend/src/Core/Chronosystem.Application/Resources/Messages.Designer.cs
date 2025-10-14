@@ -24,7 +24,8 @@ namespace Chronosystem.Application.Resources
         public static string Validation_MaxLength => Get(nameof(Validation_MaxLength));
         public static string Validation_InvalidFormat => Get(nameof(Validation_InvalidFormat));
         public static string Validation_UserId_Required => Get(nameof(Validation_UserId_Required));
-        public static string Validation_Id_Mismatch => Get(nameof(Validation_Id_Mismatch)); // ✅ NOVA CHAVE
+        public static string Validation_Id_Mismatch => Get(nameof(Validation_Id_Mismatch));
+        public static string Validation_Request_Invalid => Get(nameof(Validation_Request_Invalid)); // ✅ Adicionado
 
         // ============= UNITS =============
         public static string Unit_Id_Required => Get(nameof(Unit_Id_Required));

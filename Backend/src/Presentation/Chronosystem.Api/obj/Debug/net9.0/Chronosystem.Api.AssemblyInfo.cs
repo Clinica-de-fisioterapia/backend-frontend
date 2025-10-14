@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Chronosystem.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f5f49d2f38af07f7efa5b0a54f2c44b813257ab3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aa5ba60f1e63e9670eb6e3dd64c6d978ae886857")]
 [assembly: System.Reflection.AssemblyProductAttribute("Chronosystem.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Chronosystem.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -13,4 +13,4 @@ namespace Chronosystem.Application.UseCases.Units.Commands.CreateUnit;
 /// <summary>
 /// Representa o comando de criação de uma unidade.
 /// </summary>
-public record CreateUnitCommand(string Name, Guid UserId) : IRequest<UnitDto>;
+public record CreateUnitCommand(string Name, Guid? UserId) : IRequest<UnitDto>;

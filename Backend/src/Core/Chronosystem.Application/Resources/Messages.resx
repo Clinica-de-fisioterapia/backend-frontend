@@ -28,12 +28,15 @@
   <data name="Validation_InvalidFormat" xml:space="preserve">
     <value>The format of field {0} is invalid.</value>
   </data>
-  <data name="Validation_Id_Mismatch" xml:space="preserve">
-    <value>The ID provided in the route does not match the ID in the request body.</value>
-  </data>
   <data name="Validation_UserId_Required" xml:space="preserve">
     <value>The user ID is required.</value>
   </data>
+  <data name="Validation_Id_Mismatch" xml:space="preserve">
+    <value>The ID provided in the route does not match the ID in the request body.</value>
+  </data>
+  <data name="Validation_Request_Invalid" xml:space="preserve">
+    <value>The request object is invalid or empty.</value>
+  </data> <!-- ✅ Adicionado -->
 
   <!-- ========================================= -->
   <!-- Units Module -->

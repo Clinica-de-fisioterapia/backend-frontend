@@ -15,7 +15,7 @@ public class CreateUnitCommandValidator : AbstractValidator<CreateUnitCommand>
     public CreateUnitCommandValidator()
     {
         // ---------------------------------------------------------------------
-        // Regra 1: Nome é obrigatório
+        // Regra 1: Nome é obrigatório e válido
         // ---------------------------------------------------------------------
         RuleFor(x => x.Name)
             .NotEmpty()
@@ -24,10 +24,12 @@ public class CreateUnitCommandValidator : AbstractValidator<CreateUnitCommand>
             .WithMessage(Messages.Unit_Name_MaxLength);
 
         // ---------------------------------------------------------------------
-        // Regra 2: Usuário responsável é obrigatório
+        // Regra 2: Usuário responsável é obrigatório e deve ser um GUID válido
         // ---------------------------------------------------------------------
         RuleFor(x => x.UserId)
-            .NotEmpty()
+            .NotNull()
+            .WithMessage(Messages.Validation_UserId_Required)
+            .Must(id => id.HasValue && id != Guid.Empty)
             .WithMessage(Messages.Validation_UserId_Required);
     }
 }

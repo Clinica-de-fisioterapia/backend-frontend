@@ -12,12 +12,14 @@ using Chronosystem.Application; // AssemblyMarker
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Infrastructure.Persistence.DbContexts;
 using Chronosystem.Infrastructure.Persistence.Repositories;
-using EFCore.NamingConventions;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+
+using System.Text.Json.Serialization;
+using EmptyStringToNullableGuidConverter = Chronosystem.Infrastructure.Serialization.EmptyStringToNullableGuidConverter;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +27,15 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. CONFIGURAÇÃO DOS SERVIÇOS (Injeção de Dependência)
 // =================================================================================
 
-builder.Services.AddControllers();
+// --- Controllers com suporte ao converter personalizado ---
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // ✅ Adiciona o conversor que transforma "" em null para Guid?
+        options.JsonSerializerOptions.Converters.Add(new EmptyStringToNullableGuidConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 
