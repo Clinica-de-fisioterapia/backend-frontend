@@ -1,13 +1,17 @@
-using Chronosystem.Application.Common.Interfaces.Persistence;
-using Chronosystem.Domain.Entities;
-using MediatR;
+// ======================================================================================
+// ARQUIVO: UpdateUserCommandHandler.cs
+// CAMADA: Application / Features / Users / Commands / UpdateUser
+// OBJETIVO: Handler responsável por atualizar informações de um usuário existente.
+//            Suporta multi-tenant por schema e validações via domínio.
+// ======================================================================================
 
-// Evita conflito entre Domain.Entities.Unit e MediatR.Unit
-using Unit = MediatR.Unit;
+using Chronosystem.Application.Common.Interfaces.Persistence;
+using Chronosystem.Application.Resources;
+using MediatR;
 
 namespace Chronosystem.Application.Features.Users.Commands.UpdateUser;
 
-public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Unit>
+public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand>
 {
     private readonly IUserRepository _userRepository;
 
@@ -18,25 +22,30 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Unit>
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
     {
-        // Busca o usuário pelo Tenant
-        var user = await _userRepository.GetByIdAsync(request.UserId, request.TenantId);
+        // 1️⃣ Busca o usuário pelo ID no schema atual
+        var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken);
         if (user is null)
-            throw new KeyNotFoundException("Usuário não encontrado.");
+            throw new InvalidOperationException(Messages.User_NotFound);
 
-        // Valida o role
-        if (!Enum.TryParse<UserRole>(request.Role, true, out var userRole))
-            throw new ArgumentException("Role inválido.");
-
+        // 2️⃣ Atualiza propriedades básicas
         user.UpdateName(request.FullName);
-        user.UpdateRole(userRole);
+        user.UpdateRole(request.Role);
         user.IsActive = request.IsActive;
-        user.UpdatedBy = request.UpdatedByUserId;
+
+        // 3️⃣ Atualizações opcionais
+        if (!string.IsNullOrWhiteSpace(request.Email) && !request.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
+            user.UpdateEmail(request.Email);
+
+        if (!string.IsNullOrWhiteSpace(request.PasswordHash))
+            user.UpdatePassword(request.PasswordHash);
+
         user.UpdatedAt = DateTime.UtcNow;
 
-        // Persiste
+        // 4️⃣ Persiste alterações
         _userRepository.Update(user);
-        await _userRepository.SaveChangesAsync();
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
+        // 5️⃣ Conclusão
         return Unit.Value;
     }
 }

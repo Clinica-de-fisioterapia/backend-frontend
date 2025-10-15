@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Chronosystem.Application.UnitTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f5f49d2f38af07f7efa5b0a54f2c44b813257ab3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b653053d69bbfee1a798b117b4614eb304a09f50")]
 [assembly: System.Reflection.AssemblyProductAttribute("Chronosystem.Application.UnitTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Chronosystem.Application.UnitTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

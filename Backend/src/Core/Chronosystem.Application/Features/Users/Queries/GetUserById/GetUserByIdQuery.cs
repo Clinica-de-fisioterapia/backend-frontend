@@ -1,7 +1,15 @@
-// Features/Users/Queries/GetUserById/GetUserByIdQuery.cs
-using Chronosystem.Application.Features.Users.DTOs;
+// ======================================================================================
+// ARQUIVO: GetUserByIdQuery.cs
+// CAMADA: Application / Features / Users / Queries / GetUserById
+// OBJETIVO: Define o Query responsável por retornar um usuário específico por ID.
+// ======================================================================================
+
+using Chronosystem.Domain.Entities;
 using MediatR;
 
 namespace Chronosystem.Application.Features.Users.Queries.GetUserById;
 
-public record GetUserByIdQuery(Guid UserId, Guid TenantId) : IRequest<UserDto?>;
+/// <summary>
+/// Representa a consulta para obter os dados de um usuário específico.
+/// </summary>
+public record GetUserByIdQuery(Guid Id) : IRequest<User?>;

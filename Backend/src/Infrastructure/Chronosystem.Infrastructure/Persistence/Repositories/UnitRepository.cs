@@ -49,11 +49,30 @@ public class UnitRepository : IUnitRepository
     /// Marca uma unidade como excluída logicamente.
     /// O PostgreSQL definirá automaticamente o campo deleted_at via trigger.
     /// </summary>
-    public void Remove(Unit unit)
+    public async Task RemoveAsync(Unit unit, CancellationToken cancellationToken = default)
     {
-        unit.SoftDelete(); // apenas sinaliza intenção, sem timestamp local
-        _dbContext.Units.Update(unit);
+        // Auditoria já definida no handler: unit.UpdatedBy = <userId>;
+        // SoftDelete mantém DeletedAt = null → trigger grava NOW()
+        unit.SoftDelete();
+
+        // Gera: UPDATE units SET deleted_at = NULL, updated_by = @p WHERE id = @id;
+        var rows = await _dbContext.Units
+            .Where(u => u.Id == unit.Id && u.DeletedAt == null)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(u => u.DeletedAt, (DateTime?)null)
+                .SetProperty(u => u.UpdatedBy, unit.UpdatedBy),
+                cancellationToken);
+
+        if (rows == 0)
+        {
+            // Já deletado ou não encontrado — mantém semântica atual
+            throw new InvalidOperationException(Chronosystem.Application.Resources.Messages.Unit_NotFound);
+        }
     }
+
+
+
+
 
     // -------------------------------------------------------------------------
     // MÉTODOS DE LEITURA

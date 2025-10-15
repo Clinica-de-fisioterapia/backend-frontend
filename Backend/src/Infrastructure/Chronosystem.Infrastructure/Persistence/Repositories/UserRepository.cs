@@ -2,7 +2,7 @@
 // ARQUIVO: UserRepository.cs
 // CAMADA: Infrastructure / Persistence / Repositories
 // OBJETIVO: Implementa o repositório da entidade User, com suporte a multi-tenant por
-//            schema e validação de usuários ativos.
+//            schema e validação de usuários ativos (sem TenantId explícito).
 // ======================================================================================
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
@@ -25,41 +25,62 @@ public class UserRepository : IUserRepository
     // CRUD BÁSICO
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    /// Adiciona um novo usuário ao contexto atual.
+    /// </summary>
     public async Task AddAsync(User user)
     {
         await _dbContext.Users.AddAsync(user);
     }
 
-    public async Task<IEnumerable<User>> GetAllByTenantAsync(Guid tenantId)
-    {
-        // Em ambiente multi-tenant por schema, o tenant é resolvido via middleware
-        // O parâmetro é mantido apenas por compatibilidade
-        return await _dbContext.Users.AsNoTracking().ToListAsync();
-    }
-
-    public async Task<User?> GetByIdAsync(Guid userId, Guid tenantId)
+    /// <summary>
+    /// Retorna todos os usuários ativos do schema atual.
+    /// </summary>
+    public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId);
+            .Where(u => u.DeletedAt == null)
+            .OrderBy(u => u.FullName)
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<User?> GetUserByEmailAsync(string email)
+    /// <summary>
+    /// Retorna um usuário pelo seu ID dentro do schema atual.
+    /// </summary>
+    public async Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            .FirstOrDefaultAsync(u => u.Id == userId && u.DeletedAt == null, cancellationToken);
     }
 
-    public async Task<bool> UserExistsByEmailAsync(string email, Guid tenantId)
+    /// <summary>
+    /// Retorna um usuário pelo e-mail dentro do schema atual.
+    /// </summary>
+    public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users
             .AsNoTracking()
-            .AnyAsync(u => u.Email.ToLower() == email.ToLower());
+            .FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == email.ToLower() &&
+                u.DeletedAt == null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Verifica se existe algum usuário ativo com o e-mail informado.
+    /// </summary>
+    public async Task<bool> UserExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(u =>
+                u.Email.ToLower() == email.ToLower() &&
+                u.DeletedAt == null, cancellationToken);
     }
 
     // -------------------------------------------------------------------------
-    // SUPORTE A HANDLERS
+    // SUPORTE A HANDLERS / PERSISTÊNCIA
     // -------------------------------------------------------------------------
 
     public void Update(User user)
@@ -72,14 +93,17 @@ public class UserRepository : IUserRepository
         _dbContext.Users.Remove(user);
     }
 
-    public Task<int> SaveChangesAsync()
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return _dbContext.SaveChangesAsync();
+        return _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    // -------------------------------------------------------------------------
+    // NOVAS VALIDAÇÕES / UTILIDADES
+    // -------------------------------------------------------------------------
+
     /// <summary>
-    /// Verifica se o usuário existe e está ativo dentro do schema atual.
-    /// Considera também se o usuário não foi logicamente deletado.
+    /// Verifica se o usuário existe, está ativo e não foi logicamente deletado.
     /// </summary>
     public async Task<bool> ExistsAndIsActiveAsync(Guid userId, CancellationToken cancellationToken = default)
     {

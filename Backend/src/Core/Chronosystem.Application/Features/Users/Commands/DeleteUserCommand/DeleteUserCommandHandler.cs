@@ -1,9 +1,16 @@
+// ======================================================================================
+// ARQUIVO: DeleteUserCommandHandler.cs
+// CAMADA: Application / Features / Users / Commands / DeleteUser
+// OBJETIVO: Handler responsável por realizar a exclusão lógica (soft delete) de um usuário.
+// ======================================================================================
+
 using Chronosystem.Application.Common.Interfaces.Persistence;
+using Chronosystem.Application.Resources;
 using MediatR;
 
 namespace Chronosystem.Application.Features.Users.Commands.DeleteUser;
 
-public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Unit>
+public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand>
 {
     private readonly IUserRepository _userRepository;
 
@@ -14,18 +21,20 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Unit>
 
     public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        // Busca o usuário pelo Tenant e ID
-        var user = await _userRepository.GetByIdAsync(request.UserId, request.TenantId);
+        // 1️⃣ Busca o usuário pelo ID no schema atual
+        var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken);
         if (user is null)
-            throw new KeyNotFoundException($"Usuário com ID {request.UserId} não encontrado.");
+            throw new InvalidOperationException(Messages.User_NotFound);
 
-        // Soft delete (ajuste conforme seu domínio)
+        // 2️⃣ Marca como excluído logicamente
         user.SoftDelete();
+        user.UpdatedAt = DateTime.UtcNow;
 
-        // Persistência
+        // 3️⃣ Persiste as alterações
         _userRepository.Update(user);
-        await _userRepository.SaveChangesAsync();
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
+        // 4️⃣ Conclusão
         return Unit.Value;
     }
 }

@@ -11,19 +11,22 @@ public enum UserRole
 
 public class User : AuditableEntity
 {
-    public Guid TenantId { get; set; } // Multi-tenant support (repository uses it)
-
     public string FullName { get; private set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
-    public UserRole Role { get; set; }
+    public string Email { get; private set; } = string.Empty;
+    public string PasswordHash { get; private set; } = string.Empty;
+    public UserRole Role { get; private set; }
     public bool IsActive { get; set; }
     public long RowVersion { get; set; }
 
-    // For EF Core
+    // ---------------------------------------------------------------------------------
+    // EF Core constructor
+    // ---------------------------------------------------------------------------------
     private User() { }
 
-    public static User Create(string name, string email, string passwordhash, UserRole role)
+    // ---------------------------------------------------------------------------------
+    // Factory Method
+    // ---------------------------------------------------------------------------------
+    public static User Create(string name, string email, string passwordHash, UserRole role)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("O nome não pode ser nulo ou vazio.", nameof(name));
@@ -31,44 +34,52 @@ public class User : AuditableEntity
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentException("O e-mail não pode ser nulo ou vazio.", nameof(email));
 
-        if (string.IsNullOrWhiteSpace(passwordhash))
-            throw new ArgumentException("A senha não pode ser nula ou vazia.", nameof(passwordhash));
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("A senha não pode ser nula ou vazia.", nameof(passwordHash));
 
         return new User
         {
             Id = Guid.NewGuid(),
-            FullName = name,
-            Email = email,
-            PasswordHash = passwordhash,
-            Role = role
+            FullName = name.Trim(),
+            Email = email.Trim().ToLower(),
+            PasswordHash = passwordHash,
+            Role = role,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            RowVersion = 1
         };
     }
 
+    // ---------------------------------------------------------------------------------
+    // Update Methods (Domain Mutations)
+    // ---------------------------------------------------------------------------------
     public void UpdateName(string newName)
     {
         if (!string.IsNullOrWhiteSpace(newName))
-            FullName = newName;
+            FullName = newName.Trim();
     }
 
-    public void UpadateEmail(string newemail) // keeping your original method name
+    public void UpdateEmail(string newEmail)
     {
-        if (!string.IsNullOrWhiteSpace(newemail))
-            Email = newemail;
+        if (!string.IsNullOrWhiteSpace(newEmail))
+            Email = newEmail.Trim().ToLower();
     }
 
-    public void UpdatePassword(string newpasswordhash)
+    public void UpdatePassword(string newPasswordHash)
     {
-        if (!string.IsNullOrWhiteSpace(newpasswordhash))
-            PasswordHash = newpasswordhash;
+        if (!string.IsNullOrWhiteSpace(newPasswordHash))
+            PasswordHash = newPasswordHash;
     }
 
-    public void UpdateRole(UserRole newrole)
+    public void UpdateRole(UserRole newRole)
     {
-        Role = newrole;
+        Role = newRole;
     }
 
     public void SoftDelete()
     {
         DeletedAt = DateTime.UtcNow;
+        IsActive = false;
     }
 }
