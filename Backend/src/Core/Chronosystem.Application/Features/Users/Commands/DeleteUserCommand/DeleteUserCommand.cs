@@ -1,14 +1,15 @@
 // ======================================================================================
 // ARQUIVO: DeleteUserCommand.cs
-// CAMADA: Application / Features / Users / Commands / DeleteUser
-// OBJETIVO: Define o comando CQRS responsável pela exclusão lógica de usuários.
+// CAMADA: Application / Features / Users / Commands / DeleteUserCommand
+// OBJETIVO: Define o comando responsável por realizar o soft delete de um usuário.
 // ======================================================================================
 
 using MediatR;
+using System;
 
-namespace Chronosystem.Application.Features.Users.Commands.DeleteUser;
+namespace Chronosystem.Application.Features.Users.Commands.DeleteUserCommand;
 
 /// <summary>
-/// Representa o comando de exclusão lógica de um usuário existente.
+/// Comando CQRS responsável por excluir logicamente (soft delete) um usuário.
 /// </summary>
-public record DeleteUserCommand(Guid Id) : IRequest;
+public sealed record DeleteUserCommand(Guid Id) : IRequest;

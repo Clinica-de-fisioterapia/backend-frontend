@@ -21,17 +21,29 @@ using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using EmptyStringToNullableGuidConverter = Chronosystem.Infrastructure.Serialization.EmptyStringToNullableGuidConverter;
 
+// >>> ADIÇÕES MÍNIMAS PARA JWT/REFRESH E VALIDAÇÃO DE TENANT <<<
+using Chronosystem.Application.Common.Interfaces.Authentication;
+using Chronosystem.Infrastructure.Authentication;
+using Chronosystem.Infrastructure.Configuration;           // AuthenticationSetup / MiddlewareSetup
+using Chronosystem.Infrastructure.Middleware;             // TenantValidationMiddleware
+using Chronosystem.Domain.Enums;                          // UserRole
+using Npgsql;                                             // NpgsqlDataSourceBuilder
+using Microsoft.Extensions.Configuration;                 // IConfiguration
+using Microsoft.AspNetCore.Http;                          // IHttpContextAccessor
+
 var builder = WebApplication.CreateBuilder(args);
 
 // =================================================================================
 // 1. CONFIGURAÇÃO DOS SERVIÇOS (Injeção de Dependência)
 // =================================================================================
 
-// --- Controllers com suporte ao converter personalizado ---
+// --- Controllers com suporte aos conversores ---
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // ✅ Adiciona o conversor que transforma "" em null para Guid?
+        // ✅ Aceita enums por string ("Admin") ou número (0)
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: true));
+        // ✅ Converte "" -> null para Guid?
         options.JsonSerializerOptions.Converters.Add(new EmptyStringToNullableGuidConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
@@ -42,12 +54,24 @@ builder.Services.AddHttpContextAccessor();
 // --- Configuração do Swagger ---
 builder.Services.AddSwaggerGen(options =>
 {
+    // Header do Tenant (mantido)
     options.AddSecurityDefinition("TenantId", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
         Name = "X-Tenant",
         Type = SecuritySchemeType.ApiKey,
         Description = "Insira o subdomínio do Tenant (ex: empresa_teste)"
+    });
+
+    // >>> Esquema Bearer para JWT <<<
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Autorização via JWT. Exemplo: Bearer {seu_token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -61,26 +85,51 @@ builder.Services.AddSwaggerGen(options =>
                     Id = "TenantId"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
+        },
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
         }
     });
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// --- DbContext Multi-Tenancy ---
-builder.Services.AddDbContext<ApplicationDbContext>(
-    (serviceProvider, options) =>
-    {
-        var httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
-        var tenant = httpContextAccessor.HttpContext?.Request.Headers["X-Tenant"].FirstOrDefault();
+// --- DbContext Multi-Tenancy + Enum Mapping (Npgsql DataSource) ---
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+{
+    var httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
+    var configuration       = serviceProvider.GetRequiredService<IConfiguration>();
 
-        var fullConnectionString = $"{connectionString};Search Path={tenant},public";
+    var baseCnn = connectionString
+        ?? configuration.GetConnectionString("DefaultConnection")
+        ?? "Host=localhost;Port=5432;Database=chronosystem;Username=postgres;Password=1234";
 
-        options.UseNpgsql(fullConnectionString)
-               .UseSnakeCaseNamingConvention();
-    }
-);
+    // Resolve tenant do header (fallback para public)
+    var tenant = httpContextAccessor.HttpContext?.Request?.Headers["X-Tenant"].FirstOrDefault();
+    if (string.IsNullOrWhiteSpace(tenant))
+        tenant = "public";
+
+    // Monta connection string com search_path dinâmico
+    var fullConnectionString = $"{baseCnn};Search Path={tenant},public";
+
+    // ✅ DataSource com mapeamento do ENUM PostgreSQL
+    var dsBuilder = new NpgsqlDataSourceBuilder(fullConnectionString);
+    dsBuilder.MapEnum<UserRole>("public.user_role"); // <- ponto-chave
+    var dataSource = dsBuilder.Build();
+
+    options
+        .UseNpgsql(dataSource)                 // Usa DataSource já com MapEnum
+        .UseSnakeCaseNamingConvention();       // Mantém snake_case compatível com scripts
+});
 
 // --- Repositórios e Unidade de Trabalho ---
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
@@ -90,9 +139,13 @@ builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationD
 // --- FluentValidation ---
 builder.Services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly);
 
-// --- MediatR (gratuito) ---
+// --- MediatR ---
 builder.Services.AddMediatR(typeof(AssemblyMarker).Assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+// >>> REGISTRO JWT + REFRESH <<<
+builder.Services.AddJwtAuthentication(builder.Configuration);            // Issuer/Audience/Key/Validate
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>(); // Serviço de refresh tokens
 
 // =================================================================================
 // 2. CONFIGURAÇÃO DE LOCALIZAÇÃO (i18n)
@@ -134,7 +187,13 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 
+// Resolve tenant do header (seu middleware atual)
 app.UseMiddleware<TenantResolverMiddleware>();
+
+// >>> AUTENTICAÇÃO / VALIDAÇÃO DE TENANT / AUTORIZAÇÃO (ordem importante) <<<
+app.UseAuthentication();
+app.UseMiddleware<TenantValidationMiddleware>(); // compara X-Tenant com claim 'tenant' do JWT
+app.UseAuthorization();
 
 app.MapControllers();
 

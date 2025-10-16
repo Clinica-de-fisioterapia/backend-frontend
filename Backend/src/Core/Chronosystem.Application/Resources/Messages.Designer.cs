@@ -10,24 +10,38 @@ using System.Globalization;
 
 namespace Chronosystem.Application.Resources
 {
+    /// <summary>
+    /// Classe estática que expõe acessores fortemente tipados para mensagens multilíngues.
+    /// </summary>
+    /// <remarks>
+    /// As chaves são resolvidas dinamicamente a partir dos arquivos .resx localizados
+    /// em <c>Chronosystem.Application.Resources</c>.
+    /// </remarks>
     public static class Messages
     {
         private static readonly ResourceManager resourceManager =
             new ResourceManager("Chronosystem.Application.Resources.Messages", Assembly.GetExecutingAssembly());
 
+        /// <summary>
+        /// Retorna o valor localizado de uma chave de recurso.
+        /// </summary>
         public static string Get(string name) =>
             resourceManager.GetString(name, CultureInfo.CurrentUICulture) ?? $"[[{name}]]";
 
-        // ============= GLOBAL =============
+        // =====================================================================
+        // 🌍 GLOBAL
+        // =====================================================================
         public static string Validation_RequiredField => Get(nameof(Validation_RequiredField));
         public static string Validation_MinLength => Get(nameof(Validation_MinLength));
         public static string Validation_MaxLength => Get(nameof(Validation_MaxLength));
         public static string Validation_InvalidFormat => Get(nameof(Validation_InvalidFormat));
         public static string Validation_UserId_Required => Get(nameof(Validation_UserId_Required));
         public static string Validation_Id_Mismatch => Get(nameof(Validation_Id_Mismatch));
-        public static string Validation_Request_Invalid => Get(nameof(Validation_Request_Invalid)); // ✅ Adicionado
+        public static string Validation_Request_Invalid => Get(nameof(Validation_Request_Invalid));
 
-        // ============= UNITS =============
+        // =====================================================================
+        // 🏢 UNITS
+        // =====================================================================
         public static string Unit_Id_Required => Get(nameof(Unit_Id_Required));
         public static string Unit_Name_Required => Get(nameof(Unit_Name_Required));
         public static string Unit_Name_MinLength => Get(nameof(Unit_Name_MinLength));
@@ -36,11 +50,15 @@ namespace Chronosystem.Application.Resources
         public static string Unit_NotFound => Get(nameof(Unit_NotFound));
         public static string Unit_List_Empty => Get(nameof(Unit_List_Empty));
 
-        // ============= USERS =============
+        // =====================================================================
+        // 👤 USERS
+        // =====================================================================
         public static string User_Email_AlreadyExists => Get(nameof(User_Email_AlreadyExists));
         public static string User_NotFound => Get(nameof(User_NotFound));
         public static string User_Password_Required => Get(nameof(User_Password_Required));
         public static string User_Email_Required => Get(nameof(User_Email_Required));
         public static string User_Email_Invalid => Get(nameof(User_Email_Invalid));
+        public static string User_Inactive => Get(nameof(User_Inactive));
+        public static string User_Password_Invalid => Get(nameof(User_Password_Invalid));
     }
 }

@@ -1,38 +1,46 @@
 // ======================================================================================
 // ARQUIVO: UpdateUserDto.cs
 // CAMADA: Application / Features / Users / DTOs
-// OBJETIVO: DTO usado para atualização de usuários via API.
-//           Agora permite atualização opcional de e-mail e senha, mantendo compatibilidade.
+// OBJETIVO: Representa os dados de entrada para atualização de um usuário existente.
 // ======================================================================================
 
-using Chronosystem.Domain.Entities;
+using Chronosystem.Domain.Enums;
+using System;
 
 namespace Chronosystem.Application.Features.Users.DTOs;
 
-public class UpdateUserDto
+/// <summary>
+/// DTO utilizado na atualização de um usuário existente.
+/// </summary>
+public sealed class UpdateUserDto
 {
     /// <summary>
-    /// Nome completo atualizado do usuário.
+    /// Identificador do usuário.
     /// </summary>
-    public string FullName { get; set; } = string.Empty;
+    public Guid Id { get; init; }
 
     /// <summary>
-    /// Novo papel (role) do usuário.
+    /// Nome completo atualizado.
     /// </summary>
-    public UserRole Role { get; set; }
+    public string FullName { get; init; } = string.Empty;
 
     /// <summary>
-    /// Define se o usuário está ativo.
+    /// Novo e-mail (caso alterado).
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public string Email { get; init; } = string.Empty;
 
     /// <summary>
-    /// Novo e-mail (opcional). Caso não seja informado, o e-mail atual permanece.
+    /// Nova senha (opcional). Se preenchida, será reprocessada como hash.
     /// </summary>
-    public string? Email { get; set; }
+    public string? Password { get; init; }
 
     /// <summary>
-    /// Nova senha (opcional). Caso não seja informada, a senha atual permanece.
+    /// Novo papel do usuário.
     /// </summary>
-    public string? Password { get; set; }
+    public UserRole Role { get; init; }
+
+    /// <summary>
+    /// Indica se o usuário está ativo.
+    /// </summary>
+    public bool IsActive { get; init; }
 }

@@ -1,44 +1,23 @@
 // ======================================================================================
 // ARQUIVO: UpdateUserCommand.cs
-// CAMADA: Application / Features / Users / Commands / UpdateUser
-// OBJETIVO: Define o comando CQRS para atualizar um usuário existente.
-//           Compatível com o Controller: (id, fullName, role, isActive, updatedBy).
-//           Agora suporta atualização opcional de e-mail e senha (caso aplicável).
+// CAMADA: Application / Features / Users / Commands / UpdateUserCommand
+// OBJETIVO: Define o comando responsável por atualizar dados de um usuário existente.
 // ======================================================================================
 
-using Chronosystem.Domain.Entities;
+using Chronosystem.Domain.Enums;
 using MediatR;
+using System;
 
-namespace Chronosystem.Application.Features.Users.Commands.UpdateUser;
+namespace Chronosystem.Application.Features.Users.Commands.UpdateUserCommand;
 
-public class UpdateUserCommand : IRequest
-{
-    public Guid Id { get; private set; }
-    public string FullName { get; private set; } = string.Empty;
-    public string Email { get; private set; } = string.Empty;
-    public string? PasswordHash { get; private set; }
-    public UserRole Role { get; private set; }
-    public bool IsActive { get; private set; }
-    public Guid UpdatedBy { get; private set; }
-
-    public UpdateUserCommand(
-        Guid id,
-        string fullName,
-        UserRole role,
-        bool isActive,
-        Guid updatedBy,
-        string? email = null,
-        string? password = null)
-    {
-        Id = id;
-        FullName = fullName?.Trim() ?? string.Empty;
-        Role = role;
-        IsActive = isActive;
-        UpdatedBy = updatedBy;
-        Email = email?.Trim() ?? string.Empty;
-        PasswordHash = password;
-    }
-
-    // Construtor padrão opcional (serialização/model binding, se necessário no futuro)
-    public UpdateUserCommand() { }
-}
+/// <summary>
+/// Comando CQRS responsável por atualizar os dados de um usuário existente.
+/// </summary>
+public sealed record UpdateUserCommand(
+    Guid Id,
+    string FullName,
+    string Email,
+    string? Password,
+    UserRole Role,
+    bool IsActive
+) : IRequest;

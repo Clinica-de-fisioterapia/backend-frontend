@@ -5,12 +5,19 @@
 //            dentro do tenant atual (multi-tenant por schema).
 // ======================================================================================
 
-using Chronosystem.Domain.Entities;
+using Chronosystem.Application.Features.Users.DTOs;
 using MediatR;
+using System.Collections.Generic;
 
 namespace Chronosystem.Application.Features.Users.Queries.GetAllUsers;
 
 /// <summary>
-/// Representa a consulta para obter todos os usuários do schema atual.
+/// Representa a consulta que solicita todos os usuários ativos
+/// dentro do schema (tenant) atual.
 /// </summary>
-public record GetAllUsersQuery() : IRequest<IEnumerable<User>>;
+/// <remarks>
+/// Esta query é manipulada pelo <see cref="Handlers.GetAllUsersQueryHandler"/>  
+/// e validada por <see cref="Validators.GetAllUsersQueryValidator"/>.  
+/// O retorno é uma coleção de objetos <see cref="UserDto"/> simplificados.
+/// </remarks>
+public record GetAllUsersQuery() : IRequest<IEnumerable<UserDto>>;

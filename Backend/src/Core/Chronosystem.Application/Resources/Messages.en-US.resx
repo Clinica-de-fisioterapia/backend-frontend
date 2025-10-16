@@ -36,7 +36,7 @@
   </data>
   <data name="Validation_Request_Invalid" xml:space="preserve">
     <value>The request object is invalid or empty.</value>
-  </data> <!-- ✅ Adicionado -->
+  </data>
 
   <!-- ========================================= -->
   <!-- Units Module -->
@@ -76,4 +76,11 @@
     <value>The email format is invalid.</value>
   </data>
 
+  <!-- ✅ New messages added -->
+  <data name="User_Inactive" xml:space="preserve">
+    <value>Inactive user. Please contact the administrator.</value>
+  </data>
+  <data name="User_Password_Invalid" xml:space="preserve">
+    <value>Invalid password. Please check your credentials.</value>
+  </data>
 </root>

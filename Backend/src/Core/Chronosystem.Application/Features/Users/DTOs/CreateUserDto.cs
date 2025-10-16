@@ -1,32 +1,36 @@
 // ======================================================================================
 // ARQUIVO: CreateUserDto.cs
 // CAMADA: Application / Features / Users / DTOs
-// OBJETIVO: Objeto de transferência de dados usado para criação de usuários via API.
+// OBJETIVO: Representa os dados de entrada para criação de um novo usuário.
 // ======================================================================================
 
-using Chronosystem.Domain.Entities;
+using Chronosystem.Domain.Enums;
+using System;
 
 namespace Chronosystem.Application.Features.Users.DTOs;
 
-public class CreateUserDto
+/// <summary>
+/// DTO utilizado na criação de um novo usuário.
+/// </summary>
+public sealed class CreateUserDto
 {
     /// <summary>
     /// Nome completo do usuário.
     /// </summary>
-    public string FullName { get; set; } = string.Empty;
+    public string FullName { get; init; } = string.Empty;
 
     /// <summary>
-    /// E-mail do usuário (usado para login).
+    /// Endereço de e-mail único do usuário.
     /// </summary>
-    public string Email { get; set; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
 
     /// <summary>
-    /// Senha em texto simples — será convertida em hash no Application Layer.
+    /// Senha em texto simples (será criptografada pelo backend antes de persistir).
     /// </summary>
-    public string Password { get; set; } = string.Empty;
+    public string Password { get; init; } = string.Empty;
 
     /// <summary>
-    /// Papel (role) do usuário no sistema.
+    /// Papel (role) atribuído ao usuário.
     /// </summary>
-    public UserRole Role { get; set; } = UserRole.Receptionist;
+    public UserRole Role { get; init; }
 }

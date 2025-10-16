@@ -58,7 +58,7 @@
   </data>
   <data name="Unit_List_Empty" xml:space="preserve">
     <value>Nenhuma unidade foi encontrada.</value>
-  </data> <!-- ✅ Adicionado -->
+  </data>
 
   <!-- ========================================= -->
   <!-- Módulo de Usuários -->
@@ -78,5 +78,10 @@
   <data name="User_Email_Invalid" xml:space="preserve">
     <value>O formato do e-mail é inválido.</value>
   </data>
-
+  <data name="User_Inactive" xml:space="preserve">
+    <value>Usuário inativo. Contate o administrador.</value>
+  </data>
+  <data name="User_Password_Invalid" xml:space="preserve">
+    <value>Senha inválida. Verifique suas credenciais.</value>
+  </data>
 </root>

@@ -1,104 +1,116 @@
 // ======================================================================================
 // ARQUIVO: UsersController.cs
-// CAMADA: Interface / Controllers
-// OBJETIVO: Controlador REST responsável por gerenciar usuários do sistema.
-//            Aplica CQRS (MediatR), autenticação e autorização baseada em papéis.
+// CAMADA: Presentation / Controllers
+// OBJETIVO: Controlador responsável por expor endpoints REST relacionados a usuários.
 // ======================================================================================
 
 using Chronosystem.Application.Features.Users.Commands.CreateUser;
-using Chronosystem.Application.Features.Users.Commands.DeleteUser;
-using Chronosystem.Application.Features.Users.Commands.UpdateUser;
-using Chronosystem.Application.Features.Users.DTOs;
+using Chronosystem.Application.Features.Users.Commands.UpdateUserCommand;
+using Chronosystem.Application.Features.Users.Commands.DeleteUserCommand;
 using Chronosystem.Application.Features.Users.Queries.GetAllUsers;
 using Chronosystem.Application.Features.Users.Queries.GetUserById;
+using Chronosystem.Application.Features.Users.DTOs;
+using Chronosystem.Application.Resources;
+using Chronosystem.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using System;
+using System.Threading.Tasks;
 
 namespace Chronosystem.Api.Controllers;
 
 [ApiController]
-[Route("api/users")]
-[Authorize] // Protege todos os endpoints por padrão
-public class UsersController(ISender mediator) : ControllerBase
+[Route("api/[controller]")]
+//[Authorize] // pode ser reativado conforme a política de segurança
+public class UsersController : ControllerBase
 {
-    private Guid GetCurrentUserId()
-    {
-        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
-    }
+    private readonly IMediator _mediator;
 
-    // =========================================================================
-    // POST: api/users
-    // =========================================================================
-    [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserDto createUserDto)
-    {
-        var command = new CreateUserCommand(
-            createUserDto.FullName,
-            createUserDto.Email,
-            createUserDto.Password,
-            createUserDto.Role
-        );
+    public UsersController(IMediator mediator) => _mediator = mediator;
 
-        var createdUserId = await mediator.Send(command);
-        return CreatedAtAction(nameof(GetUserById), new { userId = createdUserId }, createdUserId);
-    }
-
-    // =========================================================================
-    // GET: api/users
-    // =========================================================================
+    // -------------------------------------------------------------------------
+    // 🔍 GET /api/users
+    // -------------------------------------------------------------------------
     [HttpGet]
     [Authorize(Roles = "Admin,Receptionist")]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAll()
     {
-        var query = new GetAllUsersQuery();
-        var users = await mediator.Send(query);
-        return Ok(users);
+        var result = await _mediator.Send(new GetAllUsersQuery());
+        return Ok(result);
     }
 
-    // =========================================================================
-    // GET: api/users/{id}
-    // =========================================================================
-    [HttpGet("{userId:guid}", Name = "GetUserById")]
+    // -------------------------------------------------------------------------
+    // 🔍 GET /api/users/{id}
+    // -------------------------------------------------------------------------
+    [HttpGet("{id:guid}")]
     [Authorize(Roles = "Admin,Receptionist")]
-    public async Task<IActionResult> GetUserById(Guid userId)
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var query = new GetUserByIdQuery(userId);
-        var user = await mediator.Send(query);
-        return user is not null ? Ok(user) : NotFound();
+        var user = await _mediator.Send(new GetUserByIdQuery(id));
+        return user is null ? NotFound(Messages.User_NotFound) : Ok(user);
     }
 
-    // =========================================================================
-    // PUT: api/users/{id}
-    // =========================================================================
-    [HttpPut("{userId:guid}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] UpdateUserDto updateUserDto)
+    // -------------------------------------------------------------------------
+    // ➕ POST /api/users
+    // -------------------------------------------------------------------------
+    [HttpPost]
+    //[Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
     {
-        var command = new UpdateUserCommand(
-            userId,
-            updateUserDto.FullName,
-            updateUserDto.Role,
-            updateUserDto.IsActive,
-            GetCurrentUserId()
+        if (dto is null)
+            return BadRequest(Messages.Validation_Request_Invalid);
+
+        // Conversão segura DTO -> Command
+        var command = new CreateUserCommand(
+            dto.FullName,
+            dto.Email,
+            dto.Password,
+            dto.Role
         );
 
-        await mediator.Send(command);
+        var userId = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetById), new { id = userId }, new { id = userId });
+    }
+
+    // -------------------------------------------------------------------------
+    // ✏️ PUT /api/users/{id}
+    // -------------------------------------------------------------------------
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserCommand command)
+    {
+        if (id != command.Id)
+            return BadRequest(Messages.Validation_Id_Mismatch);
+
+        await _mediator.Send(command);
         return NoContent();
     }
 
-    // =========================================================================
-    // DELETE: api/users/{id}
-    // =========================================================================
-    [HttpDelete("{userId:guid}")]
+    // -------------------------------------------------------------------------
+    // ❌ DELETE /api/users/{id}
+    // -------------------------------------------------------------------------
+    [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteUser(Guid userId)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var command = new DeleteUserCommand(userId);
-        await mediator.Send(command);
+        await _mediator.Send(new DeleteUserCommand(id));
         return NoContent();
+    }
+
+    // -------------------------------------------------------------------------
+    // ⚙️ GET /api/users/roles
+    // -------------------------------------------------------------------------
+    [HttpGet("roles")]
+    [Authorize(Roles = "Admin,Receptionist")]
+    public IActionResult GetRoles()
+    {
+        var roles = Enum.GetValues(typeof(UserRole));
+        var response = new
+        {
+            byName = Enum.GetNames(typeof(UserRole)),
+            byValue = roles
+        };
+        return Ok(response);
     }
 }

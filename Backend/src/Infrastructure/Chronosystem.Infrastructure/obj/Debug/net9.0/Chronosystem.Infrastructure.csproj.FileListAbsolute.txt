@@ -5,6 +5,7 @@ C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Infrastructure\Chron
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Infrastructure\Chronosystem.Infrastructure\bin\Debug\net9.0\Chronosystem.Domain.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Infrastructure\Chronosystem.Infrastructure\bin\Debug\net9.0\Chronosystem.Application.pdb
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Infrastructure\Chronosystem.Infrastructure\bin\Debug\net9.0\Chronosystem.Domain.pdb
+C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Infrastructure\Chronosystem.Infrastructure\bin\Debug\net9.0\en-US\Chronosystem.Application.resources.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Infrastructure\Chronosystem.Infrastructure\bin\Debug\net9.0\pt-BR\Chronosystem.Application.resources.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Infrastructure\Chronosystem.Infrastructure\obj\Debug\net9.0\Chronosystem.Infrastructure.csproj.AssemblyReference.cache
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Infrastructure\Chronosystem.Infrastructure\obj\Debug\net9.0\Chronosystem.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig

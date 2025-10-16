@@ -1,40 +1,41 @@
 // ======================================================================================
 // ARQUIVO: DeleteUserCommandHandler.cs
-// CAMADA: Application / Features / Users / Commands / DeleteUser
-// OBJETIVO: Handler responsável por realizar a exclusão lógica (soft delete) de um usuário.
+// CAMADA: Application / Features / Users / Commands / DeleteUserCommand
+// OBJETIVO: Manipula o comando responsável por excluir logicamente um usuário.
 // ======================================================================================
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
-using Chronosystem.Application.Resources;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Unit = MediatR.Unit; // ✅ Resolve ambiguidade
 
-namespace Chronosystem.Application.Features.Users.Commands.DeleteUser;
+namespace Chronosystem.Application.Features.Users.Commands.DeleteUserCommand;
 
-public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand>
+public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Unit>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public DeleteUserCommandHandler(IUserRepository userRepository)
+    public DeleteUserCommandHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
     {
         _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        // 1️⃣ Busca o usuário pelo ID no schema atual
         var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken);
+
         if (user is null)
-            throw new InvalidOperationException(Messages.User_NotFound);
+            throw new InvalidOperationException($"Usuário com ID {request.Id} não encontrado.");
 
-        // 2️⃣ Marca como excluído logicamente
         user.SoftDelete();
-        user.UpdatedAt = DateTime.UtcNow;
 
-        // 3️⃣ Persiste as alterações
         _userRepository.Update(user);
-        await _userRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // 4️⃣ Conclusão
         return Unit.Value;
     }
 }
