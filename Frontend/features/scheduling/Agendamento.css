@@ -1,0 +1,56 @@
+.agenda-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #10b981, #6ee7b7);
+  height: 100vh;
+}
+
+.agenda-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  width: 100%;
+  max-width: 450px;
+}
+
+.agenda-card h2 {
+  color: #065f46;
+  margin-bottom: 1rem;
+}
+
+.horario-section {
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.horario-section label {
+  font-weight: 500;
+  color: #065f46;
+}
+
+.horario-section select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  margin-top: 0.5rem;
+}
+
+.agenda-card button {
+  width: 100%;
+  padding: 12px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.agenda-card button:hover {
+  background: #059669;
+}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthLayout } from "../../../shared/layouts/AuthLayout";
 import "../styles/LoginPage.css";
 
@@ -39,6 +39,11 @@ export default function LoginPage() {
         />
         <button type="submit">Entrar</button>
       </form>
+
+      {/* novo link que aponta para a rota /login (mesma porta) */}
+      <p>
+        <Link to="/login">Ir para outra versão do Login</Link>
+      </p>
     </AuthLayout>
   );
 }
