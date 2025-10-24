@@ -3,14 +3,34 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "./Agendamento.css";
 
+interface Agendamento {
+  data: Date;
+  hora: string;
+  id: number;
+}
+
 export default function Agendamento() {
   const [dataSelecionada, setDataSelecionada] = useState<Date | null>(new Date());
   const [hora, setHora] = useState("");
+  const [historico, setHistorico] = useState<Agendamento[]>([]);
 
   const handleAgendar = () => {
     if (!dataSelecionada) return alert("Selecione uma data!");
     if (!hora) return alert("Selecione um horário!");
+    
+    const novoAgendamento: Agendamento = {
+      data: dataSelecionada,
+      hora: hora,
+      id: Date.now()
+    };
+    
+    setHistorico([...historico, novoAgendamento]);
     alert(`Agendado para ${dataSelecionada.toLocaleDateString()} às ${hora}`);
+    setHora("");
+  };
+
+  const removerAgendamento = (id: number) => {
+    setHistorico(historico.filter(item => item.id !== id));
   };
 
   const horariosDisponiveis = [
@@ -99,6 +119,54 @@ export default function Agendamento() {
           Confirmar Agendamento
         </button>
       </div>
+
+      {historico.length > 0 && (
+        <div className="historico-card">
+          <div className="historico-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 3v18h18"></path>
+              <path d="M18 17V9"></path>
+              <path d="M13 17V5"></path>
+              <path d="M8 17v-3"></path>
+            </svg>
+            <h3>Histórico de Agendamentos</h3>
+          </div>
+          <div className="historico-lista">
+            {historico.map((agendamento) => (
+              <div key={agendamento.id} className="historico-item">
+                <div className="historico-info">
+                  <div className="historico-data">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span>{agendamento.data.toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className="historico-hora">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>{agendamento.hora}</span>
+                  </div>
+                </div>
+                <button 
+                  className="btn-remover"
+                  onClick={() => removerAgendamento(agendamento.id)}
+                  title="Cancelar agendamento"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
