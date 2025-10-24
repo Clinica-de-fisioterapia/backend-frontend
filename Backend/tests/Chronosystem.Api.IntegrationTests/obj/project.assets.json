@@ -2722,32 +2722,40 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\mateu\\.nuget\\packages\\": {}
+    "C:\\Users\\User\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\mateu\\Desktop\\Git\\backend-frontend-clinica\\Backend\\tests\\Chronosystem.Api.IntegrationTests\\Chronosystem.Api.IntegrationTests.csproj",
+      "projectUniqueName": "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\tests\\Chronosystem.Api.IntegrationTests\\Chronosystem.Api.IntegrationTests.csproj",
       "projectName": "Chronosystem.Api.IntegrationTests",
-      "projectPath": "C:\\Users\\mateu\\Desktop\\Git\\backend-frontend-clinica\\Backend\\tests\\Chronosystem.Api.IntegrationTests\\Chronosystem.Api.IntegrationTests.csproj",
-      "packagesPath": "C:\\Users\\mateu\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\mateu\\Desktop\\Git\\backend-frontend-clinica\\Backend\\tests\\Chronosystem.Api.IntegrationTests\\obj\\",
+      "projectPath": "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\tests\\Chronosystem.Api.IntegrationTests\\Chronosystem.Api.IntegrationTests.csproj",
+      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\tests\\Chronosystem.Api.IntegrationTests\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "C:\\Users\\mateu\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\mateu\\Desktop\\Git\\backend-frontend-clinica\\Backend\\src\\Presentation\\Chronosystem.Api\\Chronosystem.Api.csproj": {
-              "projectPath": "C:\\Users\\mateu\\Desktop\\Git\\backend-frontend-clinica\\Backend\\src\\Presentation\\Chronosystem.Api\\Chronosystem.Api.csproj"
+            "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\src\\Presentation\\Chronosystem.Api\\Chronosystem.Api.csproj": {
+              "projectPath": "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\src\\Presentation\\Chronosystem.Api\\Chronosystem.Api.csproj"
             }
           }
         }
@@ -2805,7 +2813,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

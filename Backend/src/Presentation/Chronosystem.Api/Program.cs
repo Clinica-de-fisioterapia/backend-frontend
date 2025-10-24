@@ -33,6 +33,8 @@ using Microsoft.AspNetCore.Http;                          // IHttpContextAccesso
 using Chronosystem.Infrastructure.Tenancy;                // TenantProvisioningService
 using Microsoft.AspNetCore.Authorization;                 // Authorization options
 using Chronosystem.Infrastructure.Security.Permissions;   // Permission policies
+using Npgsql; 
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -106,10 +108,8 @@ builder.Services.AddSwaggerGen(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-static string QuoteIdentifier(string identifier) =>
-    string.Concat("\"", (identifier ?? string.Empty).Replace("\"", "\"\""), "\"");
 
-// --- DbContext Multi-Tenancy + Enum Mapping (Npgsql DataSource) ---
+// --- DbContext Multi-Tenancy (NpgsqlConnectionStringBuilder evita erros de parsing) ---
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
     var httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
@@ -119,22 +119,28 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
         ?? configuration.GetConnectionString("DefaultConnection")
         ?? "Host=localhost;Port=5432;Database=chronosystem;Username=postgres;Password=1234";
 
-    // Resolve tenant do header (fallback para public)
-    var tenant = httpContextAccessor.HttpContext?.Request?.Headers["X-Tenant"].FirstOrDefault();
-    tenant = string.IsNullOrWhiteSpace(tenant)
-        ? string.Empty
-        : tenant.Trim().ToLowerInvariant();
+    string? tenant = httpContextAccessor.HttpContext?.Request?.Headers["X-Tenant"].FirstOrDefault();
+    tenant = string.IsNullOrWhiteSpace(tenant) ? null : tenant.Trim().ToLowerInvariant();
 
-    var searchPath = string.IsNullOrWhiteSpace(tenant)
+    // 🔒 Constrói a connection string de forma segura
+    var csb = new NpgsqlConnectionStringBuilder(baseCnn);
+
+    // Se seu appsettings.json já tiver "Search Path", vamos sobrescrever aqui:
+    // (Npgsql usa a propriedade SearchPath, sem espaço)
+    var searchPath = tenant is null
         ? "public"
-        : $"{QuoteIdentifier(tenant)},public";
+        : $"\"{tenant}\",public"; // sempre entre aspas por causa de possíveis hífens
 
-    var fullConnectionString = $"{baseCnn};Search Path={searchPath}";
+    csb.SearchPath = searchPath;
+
+    // (opcional) logar a conexão sem senha para diagnosticar parsing
+    // Console.WriteLine($"[DB] Using connection: {csb.ToString().Replace(csb.Password, "****")}");
 
     options
-        .UseNpgsql(fullConnectionString)
-        .UseSnakeCaseNamingConvention();       // Mantém snake_case compatível com scripts
+        .UseNpgsql(csb.ConnectionString)
+        .UseSnakeCaseNamingConvention();
 });
+
 
 // --- Repositórios e Unidade de Trabalho ---
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
