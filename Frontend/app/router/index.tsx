@@ -1,23 +1,23 @@
 import React from "react";
 import { createBrowserRouter } from "react-router-dom";
-import LoginPage from "../../features/auth/pages/LoginPage";
 import RegisterUnitPage from "../../features/auth/pages/RegisterUnitPage";
 import Login from "../../pages/Login/Login";
 import Agendamento from "../../features/scheduling/Agendamento";
+import Menu from "../../features/menu/Menu";
 // ... outras imports
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <LoginPage />,
+    element: <Login />,
+  },
+  {
+    path: "/menu",
+    element: <Menu />,
   },
   {
     path: "/cadastro-unidade",
     element: <RegisterUnitPage />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
   },
   {
     path: "/agendamento",

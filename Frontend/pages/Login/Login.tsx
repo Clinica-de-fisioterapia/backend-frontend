@@ -12,7 +12,8 @@ export default function Login() {
 
     // Validação simples (pode ser substituída por API)
     if (email === "admin@teste.com" && senha === "123456") {
-      navigate("/agendamento");
+      // redireciona para a nova tela de Menu
+      navigate("/menu");
     } else {
       alert("Usuário ou senha incorretos!");
     }
