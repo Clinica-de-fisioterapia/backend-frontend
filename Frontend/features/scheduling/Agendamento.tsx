@@ -18,6 +18,17 @@ export default function Agendamento() {
     if (!dataSelecionada) return alert("Selecione uma data!");
     if (!hora) return alert("Selecione um horário!");
     
+    // Verificar se já existe um agendamento para a mesma data e hora
+    const agendamentoExistente = historico.find(item => {
+      const mesmaData = item.data.toDateString() === dataSelecionada.toDateString();
+      const mesmaHora = item.hora === hora;
+      return mesmaData && mesmaHora;
+    });
+    
+    if (agendamentoExistente) {
+      return alert("⚠️ Já existe um agendamento para esta data e horário!\nPor favor, escolha outro horário.");
+    }
+    
     const novoAgendamento: Agendamento = {
       data: dataSelecionada,
       hora: hora,
@@ -25,7 +36,7 @@ export default function Agendamento() {
     };
     
     setHistorico([...historico, novoAgendamento]);
-    alert(`Agendado para ${dataSelecionada.toLocaleDateString()} às ${hora}`);
+    alert(`✅ Agendado com sucesso!\n${dataSelecionada.toLocaleDateString('pt-BR')} às ${hora}`);
     setHora("");
   };
 
