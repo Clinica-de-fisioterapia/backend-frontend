@@ -26,7 +26,7 @@ namespace Chronosystem.Infrastructure.Authentication;
 /// incluindo as claims essenciais para autenticação multi-tenant:
 /// <list type="bullet">
 /// <item><description><c>sub</c> → ID do usuário (<see cref="Guid"/>).</description></item>
-/// <item><description><c>role</c> → Papel do usuário (<see cref="UserRole"/>).</description></item>
+/// <item><description><c>role</c> → Papel do usuário (string flexível).</description></item>
 /// <item><description><c>tenant</c> → Schema atual, ex.: <c>empresa_teste</c>.</description></item>
 /// </list>
 /// O token é válido apenas durante o período configurado em <see cref="JwtSettings"/>.
@@ -59,7 +59,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(ClaimTypes.Role, user.Role.ToString()),
+            new(ClaimTypes.Role, user.Role),
             new("tenant", tenant),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

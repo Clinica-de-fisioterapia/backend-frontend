@@ -40,7 +40,9 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
         });
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage(Messages.Validation_InvalidFormat);
+            .NotEmpty().WithMessage(Messages.Validation_RequiredField)
+            .Matches("^[A-Za-z][A-Za-z0-9_]{0,49}$")
+            .WithMessage(Messages.User_Role_Invalid);
 
         RuleFor(x => x.IsActive)
             .NotNull().WithMessage(Messages.Validation_RequiredField);

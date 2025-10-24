@@ -5,8 +5,10 @@
 // ======================================================================================
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
+using Chronosystem.Application.Resources;
 using Chronosystem.Domain.Entities;
-using Chronosystem.Domain.Enums;
+using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using System;
 using System.Threading;
@@ -27,6 +29,14 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>
 
     public async Task<Guid> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
+        if (await _userRepository.UserExistsByEmailAsync(request.Email, cancellationToken))
+        {
+            throw new ValidationException(new[]
+            {
+                new ValidationFailure(nameof(request.Email), Messages.User_Email_AlreadyExists)
+            });
+        }
+
         // Gera hash seguro da senha
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 

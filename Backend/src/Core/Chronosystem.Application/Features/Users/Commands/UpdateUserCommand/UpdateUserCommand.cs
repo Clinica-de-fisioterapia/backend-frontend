@@ -4,7 +4,6 @@
 // OBJETIVO: Define o comando responsável por atualizar dados de um usuário existente.
 // ======================================================================================
 
-using Chronosystem.Domain.Enums;
 using MediatR;
 using System;
 
@@ -18,6 +17,6 @@ public sealed record UpdateUserCommand(
     string FullName,
     string Email,
     string? Password,
-    UserRole Role,
+    string Role,
     bool IsActive
 ) : IRequest;

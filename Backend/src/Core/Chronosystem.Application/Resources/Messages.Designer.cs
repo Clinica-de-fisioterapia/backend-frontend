@@ -60,5 +60,22 @@ namespace Chronosystem.Application.Resources
         public static string User_Email_Invalid => Get(nameof(User_Email_Invalid));
         public static string User_Inactive => Get(nameof(User_Inactive));
         public static string User_Password_Invalid => Get(nameof(User_Password_Invalid));
+        public static string User_Role_Invalid => Get(nameof(User_Role_Invalid));
+
+        // =====================================================================
+        // 🏢 TENANTS
+        // =====================================================================
+        public static string Tenant_Subdomain_Invalid => Get(nameof(Tenant_Subdomain_Invalid));
+        public static string Tenant_Subdomain_AlreadyExists => Get(nameof(Tenant_Subdomain_AlreadyExists));
+        public static string Tenant_Header_Required => Get(nameof(Tenant_Header_Required));
+        public static string Tenant_Header_InvalidFormat => Get(nameof(Tenant_Header_InvalidFormat));
+        public static string Tenant_Header_MissingClaim => Get(nameof(Tenant_Header_MissingClaim));
+        public static string Tenant_Header_Mismatch => Get(nameof(Tenant_Header_Mismatch));
+
+        // =====================================================================
+        // 🔐 AUTH
+        // =====================================================================
+        public static string Auth_SignUp_Success => Get(nameof(Auth_SignUp_Success));
+        public static string Auth_Refresh_InvalidOrExpired => Get(nameof(Auth_Refresh_InvalidOrExpired));
     }
 }

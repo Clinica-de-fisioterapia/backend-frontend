@@ -6,7 +6,6 @@
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Domain.Entities;
-using Chronosystem.Domain.Enums;
 using MediatR;
 using System;
 using System.Threading;

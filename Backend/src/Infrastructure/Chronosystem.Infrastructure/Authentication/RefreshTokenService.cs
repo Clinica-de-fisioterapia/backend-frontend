@@ -57,9 +57,8 @@ public class RefreshTokenService : IRefreshTokenService
         await _dbContext.Set<RefreshToken>().AddAsync(refreshToken);
         await _dbContext.SaveChangesAsync();
 
-        // Retorna uma cópia segura contendo o token original em memória (não persistido)
-        var result = RefreshToken.Create(userId, tenant, plainToken, expiryDays: 7);
-        return result;
+        // Retorna a entidade com o token bruto disponível somente em memória
+        return refreshToken;
     }
 
     // -------------------------------------------------------------------------

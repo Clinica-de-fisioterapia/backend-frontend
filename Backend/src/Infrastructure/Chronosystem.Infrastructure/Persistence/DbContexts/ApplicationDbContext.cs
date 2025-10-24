@@ -4,8 +4,8 @@
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Domain.Entities;
-using Chronosystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Reflection;
 
 namespace Chronosystem.Infrastructure.Persistence.DbContexts;
@@ -24,8 +24,6 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.HasPostgresEnum<UserRole>();
-
         modelBuilder.Entity<User>().Ignore(u => u.CreatedBy);
         modelBuilder.Entity<User>().Ignore(u => u.UpdatedBy);
 
@@ -34,12 +32,13 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
             entity.ToTable("users");
             entity.HasKey(u => u.Id);
             entity.Property(u => u.FullName).HasMaxLength(255).IsRequired();
-            entity.Property(u => u.Email).HasMaxLength(255).IsRequired();
+            entity.Property(u => u.Email).HasMaxLength(255).HasColumnType("citext").IsRequired();
             entity.Property(u => u.PasswordHash).HasMaxLength(255).IsRequired();
 
             entity.HasIndex(u => u.Email).IsUnique();
 
-            entity.Property(u => u.Role).IsRequired();
+            // Role como TEXT puro (extensível). Validação por regex na camada Application.
+            entity.Property(u => u.Role).HasMaxLength(50).IsRequired();
             entity.Property(u => u.IsActive).HasDefaultValue(true).IsRequired();
             entity.Property(u => u.RowVersion).IsConcurrencyToken();
             entity.HasQueryFilter(u => u.DeletedAt == null);

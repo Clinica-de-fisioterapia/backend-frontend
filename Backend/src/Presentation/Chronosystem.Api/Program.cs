@@ -6,10 +6,12 @@
 
 // --- USING STATEMENTS ---
 using System.Globalization;
+using System.Linq;
 using Chronosystem.Api.Middleware;
 using Chronosystem.Application.Common.Behaviors; // ValidationBehavior
 using Chronosystem.Application; // AssemblyMarker
 using Chronosystem.Application.Common.Interfaces.Persistence;
+using Chronosystem.Application.Common.Interfaces.Tenancy;
 using Chronosystem.Infrastructure.Persistence.DbContexts;
 using Chronosystem.Infrastructure.Persistence.Repositories;
 using FluentValidation;
@@ -26,10 +28,11 @@ using Chronosystem.Application.Common.Interfaces.Authentication;
 using Chronosystem.Infrastructure.Authentication;
 using Chronosystem.Infrastructure.Configuration;           // AuthenticationSetup / MiddlewareSetup
 using Chronosystem.Infrastructure.Middleware;             // TenantValidationMiddleware
-using Chronosystem.Domain.Enums;                          // UserRole
-using Npgsql;                                             // NpgsqlDataSourceBuilder
 using Microsoft.Extensions.Configuration;                 // IConfiguration
 using Microsoft.AspNetCore.Http;                          // IHttpContextAccessor
+using Chronosystem.Infrastructure.Tenancy;                // TenantProvisioningService
+using Microsoft.AspNetCore.Authorization;                 // Authorization options
+using Chronosystem.Infrastructure.Security.Permissions;   // Permission policies
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -103,6 +106,9 @@ builder.Services.AddSwaggerGen(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+static string QuoteIdentifier(string identifier) =>
+    string.Concat("\"", (identifier ?? string.Empty).Replace("\"", "\"\""), "\"");
+
 // --- DbContext Multi-Tenancy + Enum Mapping (Npgsql DataSource) ---
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
@@ -115,19 +121,18 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
 
     // Resolve tenant do header (fallback para public)
     var tenant = httpContextAccessor.HttpContext?.Request?.Headers["X-Tenant"].FirstOrDefault();
-    if (string.IsNullOrWhiteSpace(tenant))
-        tenant = "public";
+    tenant = string.IsNullOrWhiteSpace(tenant)
+        ? string.Empty
+        : tenant.Trim().ToLowerInvariant();
 
-    // Monta connection string com search_path dinâmico
-    var fullConnectionString = $"{baseCnn};Search Path={tenant},public";
+    var searchPath = string.IsNullOrWhiteSpace(tenant)
+        ? "public"
+        : $"{QuoteIdentifier(tenant)},public";
 
-    // ✅ DataSource com mapeamento do ENUM PostgreSQL
-    var dsBuilder = new NpgsqlDataSourceBuilder(fullConnectionString);
-    dsBuilder.MapEnum<UserRole>("public.user_role"); // <- ponto-chave
-    var dataSource = dsBuilder.Build();
+    var fullConnectionString = $"{baseCnn};Search Path={searchPath}";
 
     options
-        .UseNpgsql(dataSource)                 // Usa DataSource já com MapEnum
+        .UseNpgsql(fullConnectionString)
         .UseSnakeCaseNamingConvention();       // Mantém snake_case compatível com scripts
 });
 
@@ -135,6 +140,8 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
+builder.Services.AddScoped<ITenantCatalogReader, TenantCatalogReader>();
+builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
 
 // --- FluentValidation ---
 builder.Services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly);
@@ -146,6 +153,15 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBeh
 // >>> REGISTRO JWT + REFRESH <<<
 builder.Services.AddJwtAuthentication(builder.Configuration);            // Issuer/Audience/Key/Validate
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>(); // Serviço de refresh tokens
+
+// >>> AUTORIZAÇÃO COM SUPORTE A POLÍTICAS PERSONALIZADAS <<<
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddAuthorization(options =>
+{
+    // Role-based simples (string), mantendo extensibilidade (sem enum fixo)
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("admin"));
+    options.AddPermissionPolicy("Permission:ManageUsers", "manage:users");
+});
 
 // =================================================================================
 // 2. CONFIGURAÇÃO DE LOCALIZAÇÃO (i18n)
