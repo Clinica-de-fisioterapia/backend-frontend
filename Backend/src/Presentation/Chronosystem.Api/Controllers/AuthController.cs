@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using BCrypt.Net;
+using Chronosystem.Application.Features.Auth.SignUp;
+using MediatR;
 
 namespace Chronosystem.Api.Controllers;
 
@@ -46,6 +48,29 @@ public class AuthController : ControllerBase
     }
 
     // =========================================================================
+    // POST: api/auth/signup
+    // =========================================================================
+
+    [AllowAnonymous]
+    [HttpPost("signup")]
+    public async Task<IActionResult> SignUp([FromBody] SignUpRequestDto? dto, [FromServices] IMediator mediator)
+    {
+        if (dto is null)
+        {
+            return BadRequest(new { error = Messages.Validation_Request_Invalid });
+        }
+
+        var companyId = await mediator.Send(new SignUpCommand(
+            dto.CompanyName,
+            dto.Subdomain,
+            dto.AdminFullName,
+            dto.AdminEmail,
+            dto.AdminPassword));
+
+        return Ok(new { companyId, message = Messages.Auth_SignUp_Success });
+    }
+
+    // =========================================================================
     // POST: api/auth/login
     // =========================================================================
 
@@ -58,7 +83,7 @@ public class AuthController : ControllerBase
     {
         var tenant = Request.Headers["X-Tenant"].ToString();
         if (string.IsNullOrWhiteSpace(tenant))
-            return Unauthorized(new { error = "Cabeçalho X-Tenant é obrigatório." });
+            return Unauthorized(new { error = Messages.Tenant_Header_Required });
 
         var user = await _userRepository.GetUserByEmailAsync(request.Email);
         if (user is null || user.DeletedAt is not null)
@@ -79,13 +104,13 @@ public class AuthController : ControllerBase
         {
             AccessToken = accessToken,
             ExpiresAtUtc = _jwtTokenGenerator.GetAccessTokenExpiryUtc(),
-            RefreshToken = refreshToken.TokenHash, // ⚠️ no retorno real, expor plain token (ver nota)
+            RefreshToken = refreshToken.PlainToken,
             User = new UserAuthDto
             {
                 Id = user.Id,
                 FullName = user.FullName,
                 Email = user.Email,
-                Role = user.Role.ToString()
+                Role = user.Role
             }
         });
     }
@@ -107,12 +132,12 @@ public class AuthController : ControllerBase
     {
         var tenant = Request.Headers["X-Tenant"].ToString();
         if (string.IsNullOrWhiteSpace(tenant))
-            return Unauthorized(new { error = "Cabeçalho X-Tenant é obrigatório." });
+            return Unauthorized(new { error = Messages.Tenant_Header_Required });
 
         // 1️⃣ Valida token existente
         var oldToken = await _refreshTokenService.ValidateAsync(request.RefreshToken, tenant);
         if (oldToken is null || !oldToken.IsValid())
-            return BadRequest(new { error = "Token inválido ou expirado." });
+            return BadRequest(new { error = Messages.Auth_Refresh_InvalidOrExpired });
 
         // 2️⃣ Busca o usuário associado
         var user = await _userRepository.GetByIdAsync(oldToken.UserId);
@@ -131,13 +156,13 @@ public class AuthController : ControllerBase
         {
             AccessToken = newAccessToken,
             ExpiresAtUtc = _jwtTokenGenerator.GetAccessTokenExpiryUtc(),
-            RefreshToken = newRefreshToken.TokenHash,
+            RefreshToken = newRefreshToken.PlainToken,
             User = new UserAuthDto
             {
                 Id = user.Id,
                 FullName = user.FullName,
                 Email = user.Email,
-                Role = user.Role.ToString()
+                Role = user.Role
             }
         });
     }

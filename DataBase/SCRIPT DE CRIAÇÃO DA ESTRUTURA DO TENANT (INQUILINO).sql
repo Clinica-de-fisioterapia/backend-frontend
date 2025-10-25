@@ -1,356 +1,285 @@
 -- =====================================================================================
--- FUNÇÃO COMPLETA PARA CRIAÇÃO DE TENANTS (MULTI-SCHEMA)
--- Inclui todas as tabelas principais: users, units, services, people,
--- professionals, customers, bookings, schedules, exceptions, refresh_tokens, settings
+-- Creates the full tenant schema with all domain tables and triggers
+-- Multi-tenant per schema; NO TenantId columns.
 -- =====================================================================================
 
-CREATE OR REPLACE FUNCTION public.create_tenant_schema(tenant_subdomain TEXT)
-RETURNS void LANGUAGE plpgsql AS $$
+CREATE OR REPLACE FUNCTION public.create_tenant_schema(p_slug TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
 BEGIN
-    RAISE NOTICE '🏗️  Criando schema %...', tenant_subdomain;
-    EXECUTE format('CREATE SCHEMA IF NOT EXISTS %I', tenant_subdomain);
+  IF p_slug IS NULL OR length(trim(p_slug)) = 0 THEN
+    RAISE EXCEPTION 'Schema name required';
+  END IF;
 
-    -- ============================================
-    -- 1️⃣ USERS
-    -- ============================================
+  -- Create schema if not present
+  EXECUTE format('CREATE SCHEMA IF NOT EXISTS %I', p_slug);
+
+  -- ===================================================================================
+  -- USERS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.users (
+      id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      full_name     TEXT NOT NULL,
+      email         CITEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      role          TEXT NOT NULL CHECK (role ~ '^[A-Za-z][A-Za-z0-9_]{0,49}$'),
+      is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_by    UUID,
+      updated_at    TIMESTAMPTZ,
+      updated_by    UUID,
+      deleted_at    TIMESTAMPTZ,
+      row_version   BIGINT NOT NULL DEFAULT 0
+    );
+  $sql$, p_slug);
+
+  EXECUTE format(
+    'CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I.users (email);',
+    p_slug||'_ux_users_email', p_slug
+  );
+
+  EXECUTE format($fmt$
+    DO $tg$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.users (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                full_name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
-                role user_role NOT NULL DEFAULT 'receptionist',
-                is_active BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                row_version BIGINT NOT NULL DEFAULT 1,
-                deleted_at TIMESTAMPTZ
-            );
-        $q$, tenant_subdomain);
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_users_set_updated_at' AND tgrelid = '%I.users'::regclass) THEN
+            CREATE TRIGGER trg_users_set_updated_at
+            BEFORE UPDATE ON %I.users
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_users_updated
-                        BEFORE UPDATE ON %I.users
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
+  -- ===================================================================================
+  -- UNITS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.units (
+      id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name         TEXT NOT NULL,
+      code         TEXT,
+      is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by   UUID,
+      updated_at   TIMESTAMPTZ,
+      updated_by   UUID,
+      deleted_at   TIMESTAMPTZ,
+      row_version  BIGINT NOT NULL DEFAULT 0
+    );
+  $sql$, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_set_deleted_at_users
-                        BEFORE UPDATE OF deleted_at ON %I.users
-                        FOR EACH ROW WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NULL)
-                        EXECUTE FUNCTION public.set_deleted_at_timestamp();', tenant_subdomain);
+  EXECUTE format(
+    'CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I.units (lower(name));',
+    p_slug||'_ux_units_name', p_slug
+  );
 
-        RAISE NOTICE '✅ users criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em users: %', SQLERRM;
-    END;
-
-    -- ============================================
-    -- 2️⃣ UNITS
-    -- ============================================
+  EXECUTE format($fmt$
+    DO $tg$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.units (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                name VARCHAR(255) NOT NULL,
-                address TEXT,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain);
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_units_set_updated_at' AND tgrelid = '%I.units'::regclass) THEN
+            CREATE TRIGGER trg_units_set_updated_at
+            BEFORE UPDATE ON %I.units
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_units_updated
-                        BEFORE UPDATE ON %I.units
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
+  -- ===================================================================================
+  -- USERS ↔ UNITS (staff_units)
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.staff_units (
+      staff_unit_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id       UUID NOT NULL REFERENCES %I.users(id) ON DELETE CASCADE,
+      unit_id       UUID NOT NULL REFERENCES %I.units(id) ON DELETE CASCADE,
+      role_in_unit  TEXT CHECK (role_in_unit IN ('admin','receptionist','professional')),
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by    UUID,
+      UNIQUE (user_id, unit_id)
+    );
+  $sql$, p_slug, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_set_deleted_at_units
-                        BEFORE UPDATE OF deleted_at ON %I.units
-                        FOR EACH ROW WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NULL)
-                        EXECUTE FUNCTION public.set_deleted_at_timestamp();', tenant_subdomain);
-
-        RAISE NOTICE '✅ units criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em units: %', SQLERRM;
-    END;
-
-    -- ============================================
-    -- 3️⃣ SERVICES
-    -- ============================================
+  EXECUTE format($fmt$
+    DO $tg$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.services (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                name VARCHAR(255) NOT NULL,
-                duration_minutes INT NOT NULL,
-                price NUMERIC(10,2) NOT NULL,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain);
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_staff_units_set_updated_at' AND tgrelid = '%I.staff_units'::regclass) THEN
+            CREATE TRIGGER trg_staff_units_set_updated_at
+            BEFORE UPDATE ON %I.staff_units
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_services_updated
-                        BEFORE UPDATE ON %I.services
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
+  -- ===================================================================================
+  -- PROFESSIONALS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.professionals (
+      id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id       UUID NOT NULL REFERENCES %I.users(id) ON DELETE CASCADE,
+      registry_code TEXT,
+      specialty     TEXT,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by    UUID,
+      updated_at    TIMESTAMPTZ,
+      updated_by    UUID,
+      deleted_at    TIMESTAMPTZ,
+      row_version   BIGINT NOT NULL DEFAULT 0,
+      UNIQUE (user_id)
+    );
+  $sql$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_set_deleted_at_services
-                        BEFORE UPDATE OF deleted_at ON %I.services
-                        FOR EACH ROW WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NULL)
-                        EXECUTE FUNCTION public.set_deleted_at_timestamp();', tenant_subdomain);
-
-        RAISE NOTICE '✅ services criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em services: %', SQLERRM;
-    END;
-
-    -- ============================================
-    -- 4️⃣ PEOPLE
-    -- ============================================
+  EXECUTE format($fmt$
+    DO $tg$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.people (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                full_name VARCHAR(255) NOT NULL,
-                cpf VARCHAR(11) UNIQUE,
-                phone VARCHAR(20),
-                email VARCHAR(255) UNIQUE,
-                address TEXT,
-                city VARCHAR(100),
-                state VARCHAR(100),
-                zip_code VARCHAR(10),
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain);
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_prof_set_updated_at' AND tgrelid = '%I.professionals'::regclass) THEN
+            CREATE TRIGGER trg_prof_set_updated_at
+            BEFORE UPDATE ON %I.professionals
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_people_updated
-                        BEFORE UPDATE ON %I.people
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
+  -- ===================================================================================
+  -- PATIENTS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.patients (
+      id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      full_name    TEXT NOT NULL,
+      email        CITEXT,
+      phone        TEXT,
+      birth_date   DATE,
+      is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by   UUID,
+      updated_at   TIMESTAMPTZ,
+      updated_by   UUID,
+      deleted_at   TIMESTAMPTZ,
+      row_version  BIGINT NOT NULL DEFAULT 0
+    );
+  $sql$, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_set_deleted_at_people
-                        BEFORE UPDATE OF deleted_at ON %I.people
-                        FOR EACH ROW WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NULL)
-                        EXECUTE FUNCTION public.set_deleted_at_timestamp();', tenant_subdomain);
-
-        RAISE NOTICE '✅ people criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em people: %', SQLERRM;
-    END;
-
-    -- ============================================
-    -- 5️⃣ PROFESSIONALS / CUSTOMERS
-    -- ============================================
+  EXECUTE format($fmt$
+    DO $tg$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.professionals (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                person_id UUID NOT NULL REFERENCES %I.people(id) UNIQUE,
-                specialty VARCHAR(255),
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain);
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_patients_set_updated_at' AND tgrelid = '%I.patients'::regclass) THEN
+            CREATE TRIGGER trg_patients_set_updated_at
+            BEFORE UPDATE ON %I.patients
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_professionals_updated
-                        BEFORE UPDATE ON %I.professionals
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
+  -- ===================================================================================
+  -- BOOKINGS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.bookings (
+      id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      unit_id         UUID NOT NULL REFERENCES %I.units(id) ON DELETE RESTRICT,
+      professional_id UUID NOT NULL REFERENCES %I.professionals(id) ON DELETE RESTRICT,
+      patient_id      UUID NOT NULL REFERENCES %I.patients(id) ON DELETE RESTRICT,
+      start_at        TIMESTAMPTZ NOT NULL,
+      end_at          TIMESTAMPTZ NOT NULL,
+      status          public.appointment_status NOT NULL DEFAULT 'Scheduled',
+      notes           TEXT,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by      UUID,
+      updated_at      TIMESTAMPTZ,
+      updated_by      UUID,
+      deleted_at      TIMESTAMPTZ,
+      row_version     BIGINT NOT NULL DEFAULT 0
+    );
+  $sql$, p_slug, p_slug, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_set_deleted_at_professionals
-                        BEFORE UPDATE OF deleted_at ON %I.professionals
-                        FOR EACH ROW WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NULL)
-                        EXECUTE FUNCTION public.set_deleted_at_timestamp();', tenant_subdomain);
-
-        RAISE NOTICE '✅ professionals criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em professionals: %', SQLERRM;
-    END;
-
+  EXECUTE format($fmt$
+    DO $tg$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.customers (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                person_id UUID NOT NULL REFERENCES %I.people(id) UNIQUE,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain);
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_bookings_set_updated_at' AND tgrelid = '%I.bookings'::regclass) THEN
+            CREATE TRIGGER trg_bookings_set_updated_at
+            BEFORE UPDATE ON %I.bookings
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_customers_updated
-                        BEFORE UPDATE ON %I.customers
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
+  -- ===================================================================================
+  -- REFRESH TOKENS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.refresh_tokens (
+      id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id        UUID NOT NULL REFERENCES %I.users(id) ON DELETE CASCADE,
+      token_hash     TEXT NOT NULL,
+      expires_at_utc TIMESTAMPTZ NOT NULL,
+      is_revoked     BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ,
+      deleted_at     TIMESTAMPTZ
+    );
+  $sql$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_set_deleted_at_customers
-                        BEFORE UPDATE OF deleted_at ON %I.customers
-                        FOR EACH ROW WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NULL)
-                        EXECUTE FUNCTION public.set_deleted_at_timestamp();', tenant_subdomain);
+  EXECUTE format('CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I.refresh_tokens (token_hash);',
+                 p_slug||'_ux_refresh_token_hash', p_slug);
 
-        RAISE NOTICE '✅ customers criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em customers: %', SQLERRM;
-    END;
-
-    -- ============================================
-    -- 6️⃣ SCHEDULES (AGENDA)
-    -- ============================================
+  EXECUTE format($fmt$
+    DO $tg$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.professional_schedules (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                professional_id UUID NOT NULL REFERENCES %I.professionals(id),
-                unit_id UUID NOT NULL REFERENCES %I.units(id),
-                day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
-                start_time TIME NOT NULL,
-                end_time TIME NOT NULL,
-                status schedule_status NOT NULL DEFAULT 'available',
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ,
-                UNIQUE (professional_id, unit_id, day_of_week, start_time, end_time)
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain);
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_refresh_tokens_set_updated_at' AND tgrelid = '%I.refresh_tokens'::regclass) THEN
+            CREATE TRIGGER trg_refresh_tokens_set_updated_at
+            BEFORE UPDATE ON %I.refresh_tokens
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
-        EXECUTE format('CREATE TRIGGER trg_professional_schedules_updated
-                        BEFORE UPDATE ON %I.professional_schedules
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
+  -- ===================================================================================
+  -- SETTINGS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.settings (
+      key        TEXT PRIMARY KEY,
+      value      JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ
+    );
+  $sql$, p_slug);
 
-        RAISE NOTICE '✅ professional_schedules criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em professional_schedules: %', SQLERRM;
-    END;
-
+  EXECUTE format($fmt$
+    CREATE OR REPLACE FUNCTION %I.fn_settings_touch()
+    RETURNS TRIGGER LANGUAGE plpgsql AS $b$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.schedule_exceptions (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                professional_id UUID NOT NULL REFERENCES %I.professionals(id),
-                unit_id UUID NOT NULL REFERENCES %I.units(id),
-                date_from TIMESTAMPTZ NOT NULL,
-                date_to TIMESTAMPTZ NOT NULL,
-                status schedule_status NOT NULL DEFAULT 'blocked',
-                reason VARCHAR(255),
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain);
+        NEW.updated_at := NOW();
+        RETURN NEW;
+    END$b$;
 
-        EXECUTE format('CREATE TRIGGER trg_schedule_exceptions_updated
-                        BEFORE UPDATE ON %I.schedule_exceptions
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
-
-        RAISE NOTICE '✅ schedule_exceptions criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em schedule_exceptions: %', SQLERRM;
-    END;
-
-    -- ============================================
-    -- 7️⃣ BOOKINGS
-    -- ============================================
+    DO $tg$
     BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.bookings (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                professional_id UUID NOT NULL REFERENCES %I.professionals(id),
-                customer_id UUID NOT NULL REFERENCES %I.customers(id),
-                service_id UUID NOT NULL REFERENCES %I.services(id),
-                unit_id UUID NOT NULL REFERENCES %I.units(id),
-                start_time TIMESTAMPTZ NOT NULL,
-                end_time TIMESTAMPTZ NOT NULL,
-                status booking_status NOT NULL DEFAULT 'scheduled',
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ,
-                EXCLUDE USING GIST (
-                    professional_id WITH =,
-                    TSTZRANGE(start_time, end_time) WITH &&
-                )
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain, tenant_subdomain);
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_settings_touch' AND tgrelid = '%I.settings'::regclass) THEN
+            CREATE TRIGGER trg_settings_touch
+            BEFORE UPDATE ON %I.settings
+            FOR EACH ROW
+            EXECUTE FUNCTION %I.fn_settings_touch();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug, p_slug, p_slug);
 
-        EXECUTE format('CREATE INDEX IF NOT EXISTS idx_bookings_prof_time ON %I.bookings (professional_id, start_time);', tenant_subdomain);
-        EXECUTE format('CREATE INDEX IF NOT EXISTS idx_bookings_cust_time ON %I.bookings (customer_id, start_time);', tenant_subdomain);
-
-        RAISE NOTICE '✅ bookings criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em bookings: %', SQLERRM;
-    END;
-
-    -- ============================================
-    -- 8️⃣ REFRESH TOKENS
-    -- ============================================
-    BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.refresh_tokens (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                user_id UUID NOT NULL REFERENCES %I.users(id) ON DELETE CASCADE,
-                token_hash VARCHAR(256) NOT NULL UNIQUE,
-                expires_at_utc TIMESTAMPTZ NOT NULL,
-                is_revoked BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ,
-                deleted_at TIMESTAMPTZ
-            );
-        $q$, tenant_subdomain, tenant_subdomain);
-
-        EXECUTE format('CREATE TRIGGER trg_refresh_tokens_updated
-                        BEFORE UPDATE ON %I.refresh_tokens
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
-
-        RAISE NOTICE '✅ refresh_tokens criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em refresh_tokens: %', SQLERRM;
-    END;
-
-    -- ============================================
-    -- 9️⃣ TENANT SETTINGS
-    -- ============================================
-    BEGIN
-        EXECUTE format($q$
-            CREATE TABLE IF NOT EXISTS %I.tenant_settings (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                key setting_key NOT NULL,
-                value TEXT,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                created_by UUID REFERENCES %I.users(id),
-                updated_by UUID REFERENCES %I.users(id),
-                deleted_at TIMESTAMPTZ,
-                UNIQUE (key)
-            );
-        $q$, tenant_subdomain, tenant_subdomain, tenant_subdomain);
-
-        EXECUTE format('CREATE TRIGGER trg_tenant_settings_updated
-                        BEFORE UPDATE ON %I.tenant_settings
-                        FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tenant_subdomain);
-
-        RAISE NOTICE '✅ tenant_settings criada';
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Erro em tenant_settings: %', SQLERRM;
-    END;
-
-    RAISE NOTICE '🎉 Tenant % criado/atualizado com sucesso.', tenant_subdomain;
 END;
 $$;
-
--- =====================================================================================
--- ✅ EXEMPLO DE USO:
--- SELECT create_tenant_schema('empresa_teste');
--- =====================================================================================

@@ -1,101 +1,8 @@
 -- =====================================================================
--- CHRONOSYSTEM - ESTRUTURA GLOBAL + TENANT  (VERSÃO CORRIGIDA)
--- Multi-tenant por schema, auditoria, concorrência (row_version),
--- users.role em TEXT (flexível), refresh tokens com hash único,
--- staff_units com escopo por unidade e RBAC extensível.
+-- Patch: ensure create_tenant_schema stores roles as TEXT and migrate
+-- existing tenant schemas created before this update.
 -- =====================================================================
 
--- ---------------------------
--- Extensões globais
--- ---------------------------
-CREATE EXTENSION IF NOT EXISTS pgcrypto;   -- gen_random_uuid()
-CREATE EXTENSION IF NOT EXISTS citext;     -- e-mail case-insensitive
-
--- ---------------------------
--- Enums globais (compartilhados)
---   Observação: removido user_role (não usado nesta versão).
--- ---------------------------
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
-                   WHERE t.typname='appointment_status' AND n.nspname='public') THEN
-        CREATE TYPE public.appointment_status AS ENUM ('Scheduled','CheckedIn','Completed','Cancelled','NoShow');
-    END IF;
-END$$;
-
--- ---------------------------
--- Função utilitária global: auditoria + concorrência
--- ---------------------------
-CREATE OR REPLACE FUNCTION public.fn_set_updated_at()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    NEW.updated_at := NOW();
-    -- row_version tipo BIGINT para optimistic concurrency
-    IF NEW.row_version IS NULL THEN
-        NEW.row_version := 0;
-    END IF;
-    NEW.row_version := NEW.row_version + 1;
-    RETURN NEW;
-END;
-$$;
-
--- ---------------------------
--- Tabela GLOBAL de tenants
--- ---------------------------
-CREATE TABLE IF NOT EXISTS public.tenants (
-    tenant_id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    slug        TEXT NOT NULL UNIQUE,              -- ex.: clinica-sol (usado como nome de schema)
-    name        TEXT NOT NULL,
-    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ,
-    deleted_at  TIMESTAMPTZ
-);
-
-CREATE INDEX IF NOT EXISTS ix_tenants_slug ON public.tenants (slug);
-
--- ---------------------------
--- Validação de slug de schema (somente letras, números e hífen)
--- ---------------------------
-CREATE OR REPLACE FUNCTION public.fn_validate_tenant_slug(p_slug TEXT)
-RETURNS VOID
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    IF p_slug IS NULL OR length(trim(p_slug))=0 THEN
-        RAISE EXCEPTION 'Tenant slug inválido (vazio).';
-    END IF;
-
-    IF p_slug !~ '^[a-z0-9]([a-z0-9\-]*[a-z0-9])?$' THEN
-        RAISE EXCEPTION 'Tenant slug inválido. Use: [a-z0-9-], sem espaços, não começar/terminar com hífen.';
-    END IF;
-END;
-$$;
-
--- ---------------------------
--- Função: DROP schema do tenant (utilitária)
--- ---------------------------
-CREATE OR REPLACE FUNCTION public.drop_tenant_schema(p_slug TEXT)
-RETURNS VOID
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    v_schema TEXT := lower(trim(p_slug));
-BEGIN
-    PERFORM public.fn_validate_tenant_slug(v_schema);
-
-    IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = v_schema) THEN
-        EXECUTE format('DROP SCHEMA %I CASCADE;', v_schema);
-    END IF;
-END;
-$$;
-
--- ---------------------------
--- Função: CREATE schema do tenant (constrói toda a estrutura)
---   Correção: users.role é TEXT (flexível) em vez de ENUM.
--- ---------------------------
 CREATE OR REPLACE FUNCTION public.create_tenant_schema(p_slug TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -469,14 +376,26 @@ BEGIN
 END;
 $$;
 
--- ================================================================
--- EXEMPLOS DE USO
--- ================================================================
--- 1) Cadastra um tenant globalmente
--- INSERT INTO public.tenants (slug, name) VALUES ('clinica-sol','Clínica Sol');
+-- Migração: converte role ENUM -> TEXT e força citext em e-mail
+DO $$
+DECLARE
+    rec RECORD;
+BEGIN
+    FOR rec IN SELECT slug FROM public.tenants LOOP
+        BEGIN
+            EXECUTE format('ALTER TABLE %I.users ALTER COLUMN role TYPE TEXT USING role::text;', rec.slug);
+        EXCEPTION WHEN undefined_column OR undefined_function THEN
+            NULL;
+        END;
 
--- 2) Cria o schema do tenant + estrutura completa
--- SELECT public.create_tenant_schema('clinica-sol');
+        BEGIN
+            EXECUTE format('ALTER TABLE %I.users ALTER COLUMN email TYPE CITEXT USING email::citext;', rec.slug);
+        EXCEPTION WHEN undefined_column THEN
+            NULL;
+        END;
 
--- 3) (opcional) remover tenant/schema (CUIDADO!)
--- SELECT public.drop_tenant_schema('clinica-sol');
+        EXECUTE format('CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I.users (email);',
+                       rec.slug||'_ux_users_email', rec.slug);
+    END LOOP;
+END;
+$$;

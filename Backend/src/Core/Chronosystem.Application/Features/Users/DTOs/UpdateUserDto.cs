@@ -4,7 +4,6 @@
 // OBJETIVO: Representa os dados de entrada para atualização de um usuário existente.
 // ======================================================================================
 
-using Chronosystem.Domain.Enums;
 using System;
 
 namespace Chronosystem.Application.Features.Users.DTOs;
@@ -37,7 +36,7 @@ public sealed class UpdateUserDto
     /// <summary>
     /// Novo papel do usuário.
     /// </summary>
-    public UserRole Role { get; init; }
+    public string Role { get; init; } = string.Empty;
 
     /// <summary>
     /// Indica se o usuário está ativo.

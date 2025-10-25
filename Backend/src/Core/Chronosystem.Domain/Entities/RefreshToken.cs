@@ -7,6 +7,7 @@
 
 using Chronosystem.Domain.Common;
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Chronosystem.Domain.Entities;
 
@@ -35,6 +36,12 @@ public class RefreshToken : AuditableEntity
     /// Valor criptografado (hash SHA256) do refresh token.
     /// </summary>
     public string TokenHash { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Token bruto retornado ao cliente durante a geração. Não é persistido.
+    /// </summary>
+    [NotMapped]
+    public string PlainToken { get; private set; } = string.Empty;
 
     /// <summary>
     /// Identificador do usuário ao qual o token pertence.
@@ -102,7 +109,12 @@ public class RefreshToken : AuditableEntity
         var tokenHash = ComputeHash(plainToken);
         var expiresAtUtc = DateTime.UtcNow.AddDays(expiryDays);
 
-        return new RefreshToken(userId, tenant, tokenHash, expiresAtUtc);
+        var refreshToken = new RefreshToken(userId, tenant, tokenHash, expiresAtUtc)
+        {
+            PlainToken = plainToken
+        };
+
+        return refreshToken;
     }
 
     // -------------------------------------------------------------------------

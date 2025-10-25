@@ -5,6 +5,7 @@
 //           no cabeçalho HTTP e o tenant presente no token JWT.
 // ======================================================================================
 
+using Chronosystem.Application.Resources;
 using Microsoft.AspNetCore.Http;
 using System.Linq;
 using System.Security.Claims;
@@ -27,6 +28,7 @@ namespace Chronosystem.Infrastructure.Middleware;
 public class TenantValidationMiddleware
 {
     private readonly RequestDelegate _next;
+    private static readonly PathString SignUpPath = new("/api/auth/signup");
 
     /// <summary>
     /// Inicializa o middleware de validação de tenant.
@@ -43,6 +45,13 @@ public class TenantValidationMiddleware
     /// <param name="context">Contexto HTTP atual.</param>
     public async Task InvokeAsync(HttpContext context)
     {
+        if (context.Request.Path.Equals(SignUpPath, StringComparison.OrdinalIgnoreCase) &&
+            HttpMethods.IsPost(context.Request.Method))
+        {
+            await _next(context);
+            return;
+        }
+
         // 1️⃣ Se não houver autenticação, apenas segue
         if (!context.User.Identity?.IsAuthenticated ?? true)
         {
@@ -60,33 +69,21 @@ public class TenantValidationMiddleware
         if (string.IsNullOrWhiteSpace(headerTenant))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new
-            {
-                error = "Cabeçalho X-Tenant ausente.",
-                details = "É necessário informar o schema do tenant ativo."
-            });
+            await context.Response.WriteAsJsonAsync(new { error = Messages.Tenant_Header_Required });
             return;
         }
 
         if (string.IsNullOrWhiteSpace(tokenTenant))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new
-            {
-                error = "Token JWT inválido.",
-                details = "A claim 'tenant' não foi encontrada no token de autenticação."
-            });
+            await context.Response.WriteAsJsonAsync(new { error = Messages.Tenant_Header_MissingClaim });
             return;
         }
 
         if (!string.Equals(headerTenant, tokenTenant, StringComparison.OrdinalIgnoreCase))
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new
-            {
-                error = "Acesso negado.",
-                details = $"O token pertence ao tenant '{tokenTenant}', mas o cabeçalho indica '{headerTenant}'."
-            });
+            await context.Response.WriteAsJsonAsync(new { error = Messages.Tenant_Header_Mismatch });
             return;
         }
 

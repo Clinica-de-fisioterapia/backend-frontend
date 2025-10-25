@@ -4,7 +4,6 @@
 // OBJETIVO: Representa os dados de saída (output) de um usuário retornado pela API.
 // ======================================================================================
 
-using Chronosystem.Domain.Enums;
 using System;
 
 namespace Chronosystem.Application.Features.Users.DTOs;
@@ -32,7 +31,7 @@ public sealed class UserDto
     /// <summary>
     /// Papel (role) do usuário.
     /// </summary>
-    public UserRole Role { get; init; }
+    public string Role { get; init; } = string.Empty;
 
     /// <summary>
     /// Indica se o usuário está ativo.
