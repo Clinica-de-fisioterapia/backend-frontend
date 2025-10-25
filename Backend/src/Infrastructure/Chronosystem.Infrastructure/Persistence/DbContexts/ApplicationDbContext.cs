@@ -1,13 +1,12 @@
 // ======================================================================================
-// ARQUIVO: ApplicationDbContext.cs (VERSÃO AJUSTADA – AUDITORIA + ROW_VERSION)
+// ARQUIVO: ApplicationDbContext.cs (VERSÃO AJUSTADA – Ignora RefreshToken.Tenant)
 // ======================================================================================
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata; // << necessário para PropertySaveBehavior
+using Microsoft.EntityFrameworkCore.Metadata; // PropertySaveBehavior
 using System;
-using System.Reflection;
 
 namespace Chronosystem.Infrastructure.Persistence.DbContexts;
 
@@ -18,6 +17,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Unit> Units => Set<Unit>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken)
         => base.SaveChangesAsync(cancellationToken);
@@ -26,13 +26,10 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     {
         base.OnModelCreating(modelBuilder);
 
-        // Mantém ignorados (colunas podem existir no banco, mas não serão persistidas pela API)
+        // ===== User =====
         modelBuilder.Entity<User>().Ignore(u => u.CreatedBy);
         modelBuilder.Entity<User>().Ignore(u => u.UpdatedBy);
 
-        // -----------------------------
-        // User mapping (inalterado, exceto row_version)
-        // -----------------------------
         modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("users");
@@ -44,12 +41,9 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
             entity.HasIndex(u => u.Email).IsUnique();
 
-            // Role como TEXT puro (extensível). Validação por regex na camada Application.
             entity.Property(u => u.Role).HasMaxLength(50).IsRequired();
-
             entity.Property(u => u.IsActive).HasDefaultValue(true).IsRequired();
 
-            // 🔁 Concorrência: valor gerado no banco (DEFAULT no insert + trigger no update)
             entity.Property(u => u.RowVersion)
                   .IsConcurrencyToken()
                   .ValueGeneratedOnAddOrUpdate();
@@ -57,11 +51,43 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
             entity.HasQueryFilter(u => u.DeletedAt == null);
         });
 
-        // ---------------------------------------------------------
-        // 🔐 BLOCO GLOBAL DE AUDITORIA (para quem herda de AuditableEntity)
-        // - Não envia CreatedAt/UpdatedAt no INSERT/UPDATE (deixa o banco cuidar)
-        // - Tipagem consistente com TIMESTAMPTZ
-        // ---------------------------------------------------------
+        // ===== RefreshToken =====
+        modelBuilder.Entity<RefreshToken>().Ignore(rt => rt.CreatedBy);
+        modelBuilder.Entity<RefreshToken>().Ignore(rt => rt.UpdatedBy);
+
+        // 🔴 Ajuste mínimo: tenant não é coluna (multi-tenant por schema) → ignorar
+        modelBuilder.Entity<RefreshToken>().Ignore(rt => rt.Tenant);
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+            entity.HasKey(rt => rt.Id);
+
+            entity.Property(rt => rt.TokenHash)
+                  .HasMaxLength(512)
+                  .IsRequired();
+
+            entity.HasIndex(rt => rt.TokenHash).IsUnique();
+
+            entity.Property(rt => rt.ExpiresAtUtc)
+                  .HasColumnType("timestamp with time zone")
+                  .IsRequired();
+
+            entity.Property(rt => rt.IsRevoked)
+                  .HasDefaultValue(false)
+                  .IsRequired();
+
+            entity.Property(rt => rt.RowVersion)
+                  .IsConcurrencyToken()
+                  .ValueGeneratedOnAddOrUpdate();
+
+            entity.HasOne<User>()
+                  .WithMany()
+                  .HasForeignKey(rt => rt.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ===== Bloco global de auditoria (para quem herda de AuditableEntity) =====
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (!typeof(Chronosystem.Domain.Common.AuditableEntity).IsAssignableFrom(entityType.ClrType))
@@ -69,7 +95,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
             var builder = modelBuilder.Entity(entityType.ClrType);
 
-            // created_at: DEFAULT now() no INSERT (não enviar pelo EF)
+            // created_at gerado no banco (DEFAULT now()), não enviar no INSERT/UPDATE
             var created = builder.Property(nameof(Chronosystem.Domain.Common.AuditableEntity.CreatedAt))
                 .HasColumnType("timestamp with time zone")
                 .HasDefaultValueSql("now()")
@@ -78,7 +104,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
             created.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
             created.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
 
-            // updated_at: DEFAULT now() no INSERT; trigger atualiza no UPDATE (não enviar pelo EF)
+            // updated_at gerado no banco no INSERT; trigger cuida no UPDATE
             var updated = builder.Property(nameof(Chronosystem.Domain.Common.AuditableEntity.UpdatedAt))
                 .HasColumnType("timestamp with time zone")
                 .HasDefaultValueSql("now()")

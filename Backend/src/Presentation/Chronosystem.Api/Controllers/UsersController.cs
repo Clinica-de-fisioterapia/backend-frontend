@@ -22,7 +22,7 @@ namespace Chronosystem.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize] // pode ser reativado conforme a política de segurança
+[Authorize] // pode ser reativado conforme a política de segurança
 public class UsersController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -33,7 +33,7 @@ public class UsersController : ControllerBase
     // 🔍 GET /api/users
     // -------------------------------------------------------------------------
     [HttpGet]
-    //[Authorize(Roles = "admin,receptionist")]
+    [Authorize(Roles = "admin,receptionist")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _mediator.Send(new GetAllUsersQuery());
@@ -44,7 +44,7 @@ public class UsersController : ControllerBase
     // 🔍 GET /api/users/{id}
     // -------------------------------------------------------------------------
     [HttpGet("{id:guid}")]
-    //[Authorize(Roles = "admin,receptionist")]
+    [Authorize(Roles = "admin,receptionist")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var user = await _mediator.Send(new GetUserByIdQuery(id));
@@ -55,7 +55,7 @@ public class UsersController : ControllerBase
     // ➕ POST /api/users
     // -------------------------------------------------------------------------
     [HttpPost]
-    //[Authorize(Roles = "admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
     {
         if (dto is null)
@@ -77,7 +77,7 @@ public class UsersController : ControllerBase
     // ✏️ PUT /api/users/{id}
     // -------------------------------------------------------------------------
     [HttpPut("{id:guid}")]
-    //[Authorize(Roles = "admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserCommand command)
     {
         if (id != command.Id)
@@ -91,7 +91,7 @@ public class UsersController : ControllerBase
     // ❌ DELETE /api/users/{id}
     // -------------------------------------------------------------------------
     [HttpDelete("{id:guid}")]
-    //[Authorize(Roles = "admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _mediator.Send(new DeleteUserCommand(id));
@@ -102,7 +102,7 @@ public class UsersController : ControllerBase
     // ⚙️ GET /api/users/roles
     // -------------------------------------------------------------------------
     [HttpGet("roles")]
-    //[Authorize(Roles = "admin,receptionist")]
+    [Authorize(Roles = "admin,receptionist")]
     public async Task<IActionResult> GetRoles()
     {
         var users = await _mediator.Send(new GetAllUsersQuery());
