@@ -35,7 +35,7 @@ using Microsoft.AspNetCore.Authorization;                 // Authorization optio
 using Chronosystem.Infrastructure.Security.Permissions;   // Permission policies
 using Npgsql; 
 
-
+Npgsql.NpgsqlConnection.ClearAllPools();
 var builder = WebApplication.CreateBuilder(args);
 
 // =================================================================================
@@ -117,7 +117,7 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
 
     var baseCnn = connectionString
         ?? configuration.GetConnectionString("DefaultConnection")
-        ?? "Host=localhost;Port=5432;Database=chronosystem;Username=postgres;Password=1234";
+        ?? "Host=localhost;Port=5432;Database=Chronosystem;Username=postgres;Password=1234";
 
     string? tenant = httpContextAccessor.HttpContext?.Request?.Headers["X-Tenant"].FirstOrDefault();
     tenant = string.IsNullOrWhiteSpace(tenant) ? null : tenant.Trim().ToLowerInvariant();
