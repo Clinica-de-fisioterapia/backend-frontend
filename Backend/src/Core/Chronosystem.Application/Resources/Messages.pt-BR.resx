@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ========================================= -->
+  <!-- Mensagens Globais de Validação -->
+  <!-- ========================================= -->
+  <data name="Validation_RequiredField" xml:space="preserve">
+    <value>O campo {0} é obrigatório.</value>
+  </data>
+  <data name="Validation_MinLength" xml:space="preserve">
+    <value>O campo {0} deve ter pelo menos {1} caracteres.</value>
+  </data>
+  <data name="Validation_MaxLength" xml:space="preserve">
+    <value>O campo {0} deve ter no máximo {1} caracteres.</value>
+  </data>
+  <data name="Validation_InvalidFormat" xml:space="preserve">
+    <value>O formato do campo {0} é inválido.</value>
+  </data>
+  <data name="Validation_UserId_Required" xml:space="preserve">
+    <value>O ID do usuário é obrigatório.</value>
+  </data>
+  <data name="Validation_Id_Mismatch" xml:space="preserve">
+    <value>O ID informado na rota não corresponde ao corpo da requisição.</value>
+  </data>
+  <data name="Validation_Request_Invalid" xml:space="preserve">
+    <value>O objeto da requisição é inválido ou está vazio.</value>
+  </data>
+
+  <!-- ========================================= -->
+  <!-- Módulo de Unidades -->
+  <!-- ========================================= -->
+  <data name="Unit_Name_AlreadyExists" xml:space="preserve">
+    <value>Já existe uma unidade com este nome.</value>
+  </data>
+  <data name="Unit_NotFound" xml:space="preserve">
+    <value>Unidade não encontrada.</value>
+  </data>
+  <data name="Unit_Name_Required" xml:space="preserve">
+    <value>O nome da unidade é obrigatório.</value>
+  </data>
+  <data name="Unit_Name_MinLength" xml:space="preserve">
+    <value>O nome da unidade deve ter pelo menos 3 caracteres.</value>
+  </data>
+  <data name="Unit_Name_MaxLength" xml:space="preserve">
+    <value>O nome da unidade deve ter no máximo 255 caracteres.</value>
+  </data>
+  <data name="Unit_List_Empty" xml:space="preserve">
+    <value>Nenhuma unidade foi encontrada.</value>
+  </data>
+
+  <!-- ========================================= -->
+  <!-- Módulo de Usuários -->
+  <!-- ========================================= -->
+  <data name="User_Email_AlreadyExists" xml:space="preserve">
+    <value>Já existe um usuário com este e-mail.</value>
+  </data>
+  <data name="User_NotFound" xml:space="preserve">
+    <value>Usuário não encontrado.</value>
+  </data>
+  <data name="User_Password_Required" xml:space="preserve">
+    <value>A senha é obrigatória.</value>
+  </data>
+  <data name="User_Email_Required" xml:space="preserve">
+    <value>O e-mail é obrigatório.</value>
+  </data>
+  <data name="User_Email_Invalid" xml:space="preserve">
+    <value>O formato do e-mail é inválido.</value>
+  </data>
+  <data name="User_Inactive" xml:space="preserve">
+    <value>Usuário inativo. Contate o administrador.</value>
+  </data>
+  <data name="User_Password_Invalid" xml:space="preserve">
+    <value>Senha inválida. Verifique suas credenciais.</value>
+  </data>
+  <data name="User_Role_Invalid" xml:space="preserve">
+    <value>O papel deve começar com uma letra e pode conter letras, números ou underscore (máx. 50 caracteres).</value>
+  </data>
+
+  <!-- ========================================= -->
+  <!-- Multi-tenant / Auth -->
+  <!-- ========================================= -->
+  <data name="Tenant_Subdomain_Invalid" xml:space="preserve">
+    <value>O subdomínio deve conter apenas letras minúsculas, números e hífens (sem começar ou terminar com hífen).</value>
+  </data>
+  <data name="Tenant_Subdomain_AlreadyExists" xml:space="preserve">
+    <value>Este subdomínio já está em uso.</value>
+  </data>
+  <data name="Tenant_Header_Required" xml:space="preserve">
+    <value>Informe o header X-Tenant com o subdomínio do tenant.</value>
+  </data>
+  <data name="Tenant_Header_InvalidFormat" xml:space="preserve">
+    <value>O valor do header X-Tenant é inválido. Use apenas letras minúsculas, números e hífens.</value>
+  </data>
+  <data name="Tenant_Header_MissingClaim" xml:space="preserve">
+    <value>O token JWT não contém a claim de tenant.</value>
+  </data>
+  <data name="Tenant_Header_Mismatch" xml:space="preserve">
+    <value>O tenant do token não corresponde ao informado no header X-Tenant.</value>
+  </data>
+  <data name="Auth_SignUp_Success" xml:space="preserve">
+    <value>Cadastro realizado com sucesso.</value>
+  </data>
+  <data name="Auth_Refresh_InvalidOrExpired" xml:space="preserve">
+    <value>O refresh token é inválido ou já expirou.</value>
+  </data>
+</root>

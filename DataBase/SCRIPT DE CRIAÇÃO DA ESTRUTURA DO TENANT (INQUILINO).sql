@@ -1,222 +1,285 @@
--- =================================================================================
--- ARQUIVO: SCRIPT DE CRIAÇÃO DA ESTRUTURA DO TENANT (INQUILINO).sql
--- OBJETIVO: Define todas as tabelas que armazenam dados específicos de cada tenant.
--- MODELO: Multi-Tenant com Schema Compartilhado (isolamento via coluna `tenant_id`).
--- =================================================================================
+-- =====================================================================================
+-- Creates the full tenant schema with all domain tables and triggers
+-- Multi-tenant per schema; NO TenantId columns.
+-- =====================================================================================
 
--- 🎭 Controle de Empresas (Tenants)
-CREATE TABLE IF NOT EXISTS tenants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    subdomain VARCHAR(100) UNIQUE NOT NULL,
-    plan_id UUID REFERENCES plans(id), -- Chave estrangeira para a tabela global de planos
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMPTZ
-);
-CREATE TRIGGER trg_tenants_updated BEFORE UPDATE ON tenants FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE OR REPLACE FUNCTION public.create_tenant_schema(p_slug TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_slug IS NULL OR length(trim(p_slug)) = 0 THEN
+    RAISE EXCEPTION 'Schema name required';
+  END IF;
 
--- 👤 Usuários e Identidade
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    full_name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role user_role NOT NULL DEFAULT 'receptionist',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    row_version BIGINT NOT NULL DEFAULT 1,
-    deleted_at TIMESTAMPTZ,
-    UNIQUE (tenant_id, email)
-);
-CREATE TRIGGER trg_users_updated BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  -- Create schema if not present
+  EXECUTE format('CREATE SCHEMA IF NOT EXISTS %I', p_slug);
 
--- Tabela para Refresh Tokens
-CREATE TABLE IF NOT EXISTS user_refresh_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash VARCHAR(255) NOT NULL UNIQUE,
-    expires_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    revoked_at TIMESTAMPTZ
-);
+  -- ===================================================================================
+  -- USERS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.users (
+      id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      full_name     TEXT NOT NULL,
+      email         CITEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      role          TEXT NOT NULL CHECK (role ~ '^[A-Za-z][A-Za-z0-9_]{0,49}$'),
+      is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_by    UUID,
+      updated_at    TIMESTAMPTZ,
+      updated_by    UUID,
+      deleted_at    TIMESTAMPTZ,
+      row_version   BIGINT NOT NULL DEFAULT 0
+    );
+  $sql$, p_slug);
 
--- 🧑 Pessoas, Profissionais e Clientes
-CREATE TABLE IF NOT EXISTS people (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    full_name VARCHAR(255) NOT NULL,
-    cpf VARCHAR(11),
-    phone VARCHAR(20),
-    email VARCHAR(255),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id),
-    deleted_at TIMESTAMPTZ,
-    UNIQUE (tenant_id, cpf) WHERE (cpf IS NOT NULL),
-    UNIQUE (tenant_id, email) WHERE (email IS NOT NULL)
-);
-CREATE TRIGGER trg_people_updated BEFORE UPDATE ON people FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE format(
+    'CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I.users (email);',
+    p_slug||'_ux_users_email', p_slug
+  );
 
-CREATE TABLE IF NOT EXISTS professionals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    person_id UUID NOT NULL REFERENCES people(id),
-    specialty VARCHAR(255),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id),
-    deleted_at TIMESTAMPTZ,
-    UNIQUE(tenant_id, person_id)
-);
-CREATE TRIGGER trg_professionals_updated BEFORE UPDATE ON professionals FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE format($fmt$
+    DO $tg$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_users_set_updated_at' AND tgrelid = '%I.users'::regclass) THEN
+            CREATE TRIGGER trg_users_set_updated_at
+            BEFORE UPDATE ON %I.users
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
-CREATE TABLE IF NOT EXISTS customers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    person_id UUID NOT NULL REFERENCES people(id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id),
-    deleted_at TIMESTAMPTZ,
-    UNIQUE(tenant_id, person_id)
-);
-CREATE TRIGGER trg_customers_updated BEFORE UPDATE ON customers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  -- ===================================================================================
+  -- UNITS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.units (
+      id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name         TEXT NOT NULL,
+      code         TEXT,
+      is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by   UUID,
+      updated_at   TIMESTAMPTZ,
+      updated_by   UUID,
+      deleted_at   TIMESTAMPTZ,
+      row_version  BIGINT NOT NULL DEFAULT 0
+    );
+  $sql$, p_slug);
 
--- 🏢 Unidades e Serviços
-CREATE TABLE IF NOT EXISTS units (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id),
-    deleted_at TIMESTAMPTZ
-);
-CREATE TRIGGER trg_units_updated BEFORE UPDATE ON units FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE format(
+    'CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I.units (lower(name));',
+    p_slug||'_ux_units_name', p_slug
+  );
 
-CREATE TABLE IF NOT EXISTS services (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    name VARCHAR(255) NOT NULL,
-    duration_minutes INT NOT NULL,
-    price NUMERIC(10,2) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id),
-    deleted_at TIMESTAMPTZ
-);
-CREATE TRIGGER trg_services_updated BEFORE UPDATE ON services FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE format($fmt$
+    DO $tg$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_units_set_updated_at' AND tgrelid = '%I.units'::regclass) THEN
+            CREATE TRIGGER trg_units_set_updated_at
+            BEFORE UPDATE ON %I.units
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
--- 🔐 Tabelas para RBAC com Escopo
-CREATE TABLE IF NOT EXISTS roles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    name VARCHAR(50) NOT NULL,
-    UNIQUE (tenant_id, name)
-);
+  -- ===================================================================================
+  -- USERS ↔ UNITS (staff_units)
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.staff_units (
+      staff_unit_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id       UUID NOT NULL REFERENCES %I.users(id) ON DELETE CASCADE,
+      unit_id       UUID NOT NULL REFERENCES %I.units(id) ON DELETE CASCADE,
+      role_in_unit  TEXT CHECK (role_in_unit IN ('admin','receptionist','professional')),
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by    UUID,
+      UNIQUE (user_id, unit_id)
+    );
+  $sql$, p_slug, p_slug, p_slug);
 
-CREATE TABLE IF NOT EXISTS user_roles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    user_id UUID NOT NULL REFERENCES users(id),
-    role_id UUID NOT NULL REFERENCES roles(id),
-    unit_id UUID NOT NULL REFERENCES units(id), -- O ESCOPO
-    UNIQUE (tenant_id, user_id, role_id, unit_id)
-);
+  EXECUTE format($fmt$
+    DO $tg$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_staff_units_set_updated_at' AND tgrelid = '%I.staff_units'::regclass) THEN
+            CREATE TRIGGER trg_staff_units_set_updated_at
+            BEFORE UPDATE ON %I.staff_units
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
--- 📅 Motor de Disponibilidade e Agendamentos
-CREATE TABLE IF NOT EXISTS bookings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    professional_id UUID NOT NULL REFERENCES professionals(id),
-    customer_id UUID NOT NULL REFERENCES customers(id),
-    service_id UUID NOT NULL REFERENCES services(id),
-    unit_id UUID NOT NULL REFERENCES units(id),
-    start_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ NOT NULL,
-    status booking_status NOT NULL DEFAULT 'confirmed',
-    row_version BIGINT NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id),
-    CONSTRAINT no_overlapping_bookings EXCLUDE USING GIST (
-        tenant_id WITH =,
-        professional_id WITH =,
-        TSTZRANGE(start_time, end_time) WITH &&
-    )
-) PARTITION BY RANGE (start_time);
-CREATE TRIGGER trg_bookings_updated BEFORE UPDATE ON bookings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  -- ===================================================================================
+  -- PROFESSIONALS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.professionals (
+      id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id       UUID NOT NULL REFERENCES %I.users(id) ON DELETE CASCADE,
+      registry_code TEXT,
+      specialty     TEXT,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by    UUID,
+      updated_at    TIMESTAMPTZ,
+      updated_by    UUID,
+      deleted_at    TIMESTAMPTZ,
+      row_version   BIGINT NOT NULL DEFAULT 0,
+      UNIQUE (user_id)
+    );
+  $sql$, p_slug, p_slug);
 
--- Tabela para Exceções de Agenda (Férias, Feriados)
-CREATE TABLE IF NOT EXISTS schedule_exceptions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    unit_id UUID REFERENCES units(id),
-    professional_id UUID REFERENCES professionals(id),
-    title VARCHAR(255) NOT NULL,
-    start_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ NOT NULL,
-    is_blocker BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    CONSTRAINT professional_or_unit_required CHECK (professional_id IS NOT NULL OR unit_id IS NOT NULL)
-);
+  EXECUTE format($fmt$
+    DO $tg$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_prof_set_updated_at' AND tgrelid = '%I.professionals'::regclass) THEN
+            CREATE TRIGGER trg_prof_set_updated_at
+            BEFORE UPDATE ON %I.professionals
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
--- Tabela de Agenda Pré-calculada
-CREATE TABLE IF NOT EXISTS professional_schedules (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    professional_id UUID NOT NULL REFERENCES professionals(id),
-    unit_id UUID NOT NULL REFERENCES units(id),
-    start_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ NOT NULL,
-    status schedule_status NOT NULL DEFAULT 'available',
-    booking_id UUID UNIQUE REFERENCES bookings(id),
-    exception_id UUID REFERENCES schedule_exceptions(id),
-    CONSTRAINT no_overlapping_schedule_slots EXCLUDE USING GIST (
-        tenant_id WITH =,
-        professional_id WITH =,
-        unit_id WITH =,
-        TSTZRANGE(start_time, end_time) WITH &&
-    )
-);
+  -- ===================================================================================
+  -- PATIENTS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.patients (
+      id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      full_name    TEXT NOT NULL,
+      email        CITEXT,
+      phone        TEXT,
+      birth_date   DATE,
+      is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by   UUID,
+      updated_at   TIMESTAMPTZ,
+      updated_by   UUID,
+      deleted_at   TIMESTAMPTZ,
+      row_version  BIGINT NOT NULL DEFAULT 0
+    );
+  $sql$, p_slug);
 
--- ⚙️ Configurações
-CREATE TABLE IF NOT EXISTS tenant_settings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    key VARCHAR(100) NOT NULL,
-    value TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id),
-    UNIQUE(tenant_id, key)
-);
-CREATE TRIGGER trg_tenant_settings_updated BEFORE UPDATE ON tenant_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE format($fmt$
+    DO $tg$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_patients_set_updated_at' AND tgrelid = '%I.patients'::regclass) THEN
+            CREATE TRIGGER trg_patients_set_updated_at
+            BEFORE UPDATE ON %I.patients
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
--- ⚡ Índices Otimizados para Multi-Tenant
-CREATE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email);
-CREATE INDEX IF NOT EXISTS idx_people_tenant_cpf ON people (tenant_id, cpf);
-CREATE INDEX IF NOT EXISTS idx_people_tenant_name_trgm ON people USING gin (tenant_id, full_name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_user_roles_user_unit ON user_roles (tenant_id, user_id, unit_id);
-CREATE INDEX IF NOT EXISTS idx_professional_schedules_availability ON professional_schedules (tenant_id, professional_id, unit_id, start_time) WHERE status = 'available';
-CREATE INDEX IF NOT EXISTS idx_bookings_tenant_professional ON bookings (tenant_id, professional_id, start_time DESC);
-CREATE INDEX IF NOT EXISTS idx_bookings_tenant_customer ON bookings (tenant_id, customer_id, start_time DESC);
+  -- ===================================================================================
+  -- BOOKINGS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.bookings (
+      id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      unit_id         UUID NOT NULL REFERENCES %I.units(id) ON DELETE RESTRICT,
+      professional_id UUID NOT NULL REFERENCES %I.professionals(id) ON DELETE RESTRICT,
+      patient_id      UUID NOT NULL REFERENCES %I.patients(id) ON DELETE RESTRICT,
+      start_at        TIMESTAMPTZ NOT NULL,
+      end_at          TIMESTAMPTZ NOT NULL,
+      status          public.appointment_status NOT NULL DEFAULT 'Scheduled',
+      notes           TEXT,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_by      UUID,
+      updated_at      TIMESTAMPTZ,
+      updated_by      UUID,
+      deleted_at      TIMESTAMPTZ,
+      row_version     BIGINT NOT NULL DEFAULT 0
+    );
+  $sql$, p_slug, p_slug, p_slug, p_slug);
 
--- 🗂️ Particionamento de Agendamentos (Exemplo de execução)
--- O Worker Service chamará a função create_bookings_partition_if_not_exists para garantir que elas existam.
-SELECT create_bookings_partition_if_not_exists('2025-01-01 00:00:00+00');
-SELECT create_bookings_partition_if_not_exists('2026-01-01 00:00:00+00');
+  EXECUTE format($fmt$
+    DO $tg$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_bookings_set_updated_at' AND tgrelid = '%I.bookings'::regclass) THEN
+            CREATE TRIGGER trg_bookings_set_updated_at
+            BEFORE UPDATE ON %I.bookings
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
 
--- ========================== FIM DA ESTRUTURA DO TENANT ==========================
+  -- ===================================================================================
+  -- REFRESH TOKENS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.refresh_tokens (
+      id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id        UUID NOT NULL REFERENCES %I.users(id) ON DELETE CASCADE,
+      token_hash     TEXT NOT NULL,
+      expires_at_utc TIMESTAMPTZ NOT NULL,
+      is_revoked     BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ,
+      deleted_at     TIMESTAMPTZ
+    );
+  $sql$, p_slug, p_slug);
+
+  EXECUTE format('CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I.refresh_tokens (token_hash);',
+                 p_slug||'_ux_refresh_token_hash', p_slug);
+
+  EXECUTE format($fmt$
+    DO $tg$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_refresh_tokens_set_updated_at' AND tgrelid = '%I.refresh_tokens'::regclass) THEN
+            CREATE TRIGGER trg_refresh_tokens_set_updated_at
+            BEFORE UPDATE ON %I.refresh_tokens
+            FOR EACH ROW
+            EXECUTE FUNCTION public.fn_set_updated_at();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug);
+
+  -- ===================================================================================
+  -- SETTINGS
+  -- ===================================================================================
+  EXECUTE format($sql$
+    CREATE TABLE IF NOT EXISTS %I.settings (
+      key        TEXT PRIMARY KEY,
+      value      JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ
+    );
+  $sql$, p_slug);
+
+  EXECUTE format($fmt$
+    CREATE OR REPLACE FUNCTION %I.fn_settings_touch()
+    RETURNS TRIGGER LANGUAGE plpgsql AS $b$
+    BEGIN
+        NEW.updated_at := NOW();
+        RETURN NEW;
+    END$b$;
+
+    DO $tg$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger 
+                       WHERE tgname = 'trg_settings_touch' AND tgrelid = '%I.settings'::regclass) THEN
+            CREATE TRIGGER trg_settings_touch
+            BEFORE UPDATE ON %I.settings
+            FOR EACH ROW
+            EXECUTE FUNCTION %I.fn_settings_touch();
+        END IF;
+    END$tg$;
+  $fmt$, p_slug, p_slug, p_slug, p_slug);
+
+END;
+$$;
