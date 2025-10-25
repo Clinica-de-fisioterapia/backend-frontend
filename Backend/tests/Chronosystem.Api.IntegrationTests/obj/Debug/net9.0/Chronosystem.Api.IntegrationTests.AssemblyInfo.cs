@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Chronosystem.Api.IntegrationTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+973febc06d4933e2ce8e685139ec7a8a601a5577")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cdb2d969b7a2f145c88602081a4af937848ce55f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Chronosystem.Api.IntegrationTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Chronosystem.Api.IntegrationTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

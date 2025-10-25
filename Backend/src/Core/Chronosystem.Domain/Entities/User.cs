@@ -1,82 +1,41 @@
-// ======================================================================================
-// ARQUIVO: User.cs
-// CAMADA: Domain / Entities
-// OBJETIVO: Define a entidade de domínio "User", representando um usuário do sistema,
-//           com regras de negócio encapsuladas e suporte a auditoria e soft delete.
-// ======================================================================================
-
-using Chronosystem.Domain.Common;
 using System;
+using Chronosystem.Domain.Common;
 
-namespace Chronosystem.Domain.Entities;
-
-/// <summary>
-/// Entidade de domínio que representa um usuário do sistema.
-/// </summary>
-public class User : AuditableEntity
+namespace Chronosystem.Domain.Entities
 {
-    public string FullName { get; private set; } = string.Empty;
-    public string Email { get; private set; } = string.Empty; // CITEXT no banco
-    public string PasswordHash { get; private set; } = string.Empty;
-    // Papel global flexível (TEXT no banco). Nunca vincular a enum fixa.
-    public string Role { get; private set; } = "receptionist";
-    public bool IsActive { get; private set; } = true;
-    public long RowVersion { get; private set; }
-
-    private User() { }
-
-    public static User Create(string fullName, string email, string passwordHash, string role)
+    public sealed class User : AuditableEntity
     {
-        if (string.IsNullOrWhiteSpace(fullName)) throw new ArgumentException("Full name is required.", nameof(fullName));
-        if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email is required.", nameof(email));
-        if (string.IsNullOrWhiteSpace(passwordHash)) throw new ArgumentException("Password hash is required.", nameof(passwordHash));
-        if (string.IsNullOrWhiteSpace(role)) throw new ArgumentException("Role is required.", nameof(role));
+        public string FullName     { get; private set; } = string.Empty;
+        public string Email        { get; private set; } = string.Empty; // citext no banco
+        public string PasswordHash { get; private set; } = string.Empty;
+        public string Role         { get; private set; } = "receptionist";
+        public bool   IsActive     { get; private set; } = true;
 
-        return new User
-        {
-            Id = Guid.NewGuid(),
-            FullName = fullName.Trim(),
-            Email = email.Trim().ToLowerInvariant(),
-            PasswordHash = passwordHash,
-            // normaliza para minúsculas; regex é validada na camada de aplicação
-            Role = role.Trim().ToLowerInvariant(),
-            IsActive = true
-        };
-    }
+        private User() { }
 
-    public void UpdateName(string newName)
-    {
-        if (!string.IsNullOrWhiteSpace(newName))
+        public static User Create(string fullName, string email, string passwordHash, string role)
         {
-            FullName = newName.Trim();
+            if (string.IsNullOrWhiteSpace(fullName))    throw new ArgumentException(nameof(fullName));
+            if (string.IsNullOrWhiteSpace(email))       throw new ArgumentException(nameof(email));
+            if (string.IsNullOrWhiteSpace(passwordHash))throw new ArgumentException(nameof(passwordHash));
+            if (string.IsNullOrWhiteSpace(role))        throw new ArgumentException(nameof(role));
+
+            return new User
+            {
+                Id = Guid.NewGuid(),                                    // ok: setter é protected (da base)
+                FullName = fullName.Trim(),
+                Email = email.Trim(),                                   // citext trata case-insensitive
+                PasswordHash = passwordHash,
+                Role = role.Trim().ToLowerInvariant(),
+                IsActive = true
+            };
         }
+
+        public void UpdateName(string v)        { if (!string.IsNullOrWhiteSpace(v)) FullName = v.Trim(); }
+        public void UpdateEmail(string v)       { if (!string.IsNullOrWhiteSpace(v)) Email = v.Trim(); }
+        public void UpdatePassword(string hash) { if (!string.IsNullOrWhiteSpace(hash)) PasswordHash = hash; }
+        public void UpdateRole(string v)        { if (!string.IsNullOrWhiteSpace(v)) Role = v.Trim().ToLowerInvariant(); }
+        public void UpdateIsActive(bool v)      => IsActive = v;
+        public void SoftDelete()                => DeletedAt = DateTime.UtcNow;
     }
-
-    public void UpdateEmail(string newEmail)
-    {
-        if (!string.IsNullOrWhiteSpace(newEmail))
-        {
-            Email = newEmail.Trim().ToLowerInvariant();
-        }
-    }
-
-    public void UpdatePassword(string newPasswordHash)
-    {
-        if (!string.IsNullOrWhiteSpace(newPasswordHash))
-        {
-            PasswordHash = newPasswordHash;
-        }
-    }
-
-    public void UpdateRole(string newRole)
-    {
-        if (!string.IsNullOrWhiteSpace(newRole))
-        {
-            Role = newRole.Trim().ToLowerInvariant();
-        }
-    }
-
-    public void UpdateIsActive(bool active) => IsActive = active;
-
-    public void SoftDelete() => DeletedAt = DateTime.UtcNow;
 }

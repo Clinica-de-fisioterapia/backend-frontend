@@ -1,15 +1,13 @@
-// Core/Chronosystem.Domain/Common/BaseEntity.cs
-namespace Chronosystem.Domain.Common;
+using System;
 
-public abstract class BaseEntity
+namespace Chronosystem.Domain.Common
 {
-    public Guid Id { get; set; }
+    /// <summary>Base enxuta: apenas identidade (e opcionalmente concurrency).</summary>
+    public abstract class BaseEntity
+    {
+        public Guid Id { get; protected set; }
 
-    // (opcional) campos de auditoria/concurrency — mantenha só se você usa
-    public DateTimeOffset CreatedAt { get; set; }
-    public Guid? CreatedBy { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
-    public Guid? UpdatedBy { get; set; }
-    public DateTimeOffset? DeletedAt { get; set; }
-    public long RowVersion { get; set; }
+        // Concurrency/ETag opcional; mantenha se existir coluna no banco
+        public long RowVersion { get; set; }
+    }
 }
