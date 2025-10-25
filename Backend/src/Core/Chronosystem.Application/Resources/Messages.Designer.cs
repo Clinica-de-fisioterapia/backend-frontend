@@ -19,8 +19,10 @@ namespace Chronosystem.Application.Resources
     /// </remarks>
     public static class Messages
     {
+        // Nota: typeof(Messages).Assembly é mais robusto que GetExecutingAssembly()
+        // pois sempre resolve o assembly onde esta classe está definida.
         private static readonly ResourceManager resourceManager =
-            new ResourceManager("Chronosystem.Application.Resources.Messages", Assembly.GetExecutingAssembly());
+            new ResourceManager("Chronosystem.Application.Resources.Messages", typeof(Messages).Assembly);
 
         /// <summary>
         /// Retorna o valor localizado de uma chave de recurso.

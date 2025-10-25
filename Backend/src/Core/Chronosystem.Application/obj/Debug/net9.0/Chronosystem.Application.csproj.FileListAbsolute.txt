@@ -26,12 +26,11 @@ C:\Users\mateu\Desktop\Git\backend-frontend-clinica\Backend\src\Core\Chronosyste
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\bin\Debug\net9.0\Chronosystem.Application.deps.json
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\bin\Debug\net9.0\Chronosystem.Application.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\bin\Debug\net9.0\Chronosystem.Application.pdb
-C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\bin\Debug\net9.0\en-US\Chronosystem.Application.resources.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\bin\Debug\net9.0\pt-BR\Chronosystem.Application.resources.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\bin\Debug\net9.0\Chronosystem.Domain.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\bin\Debug\net9.0\Chronosystem.Domain.pdb
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.csproj.AssemblyReference.cache
-C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.Resources.Messages.en-US.resources
+C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.Resources.Messages.resources
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.Resources.Messages.pt-BR.resources
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.csproj.GenerateResource.cache
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.GeneratedMSBuildEditorConfig.editorconfig
@@ -39,8 +38,6 @@ C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Ap
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.AssemblyInfo.cs
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.csproj.CoreCompileInputs.cache
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosystem.Application.sourcelink.json
-C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\en-US\Chronosystem.Application.resources.cs
-C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\en-US\Chronosystem.Application.resources.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\pt-BR\Chronosystem.Application.resources.cs
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\pt-BR\Chronosystem.Application.resources.dll
 C:\Users\User\Documents\GitHub\backend-frontend\Backend\src\Core\Chronosystem.Application\obj\Debug\net9.0\Chronosy.95B64248.Up2Date

@@ -30,28 +30,6 @@ public class UsersController : ControllerBase
     public UsersController(IMediator mediator) => _mediator = mediator;
 
     // -------------------------------------------------------------------------
-    // 🔍 GET /api/users
-    // -------------------------------------------------------------------------
-    [HttpGet]
-    [Authorize(Roles = "admin,receptionist")]
-    public async Task<IActionResult> GetAll()
-    {
-        var result = await _mediator.Send(new GetAllUsersQuery());
-        return Ok(result);
-    }
-
-    // -------------------------------------------------------------------------
-    // 🔍 GET /api/users/{id}
-    // -------------------------------------------------------------------------
-    [HttpGet("{id:guid}")]
-    [Authorize(Roles = "admin,receptionist")]
-    public async Task<IActionResult> GetById(Guid id)
-    {
-        var user = await _mediator.Send(new GetUserByIdQuery(id));
-        return user is null ? NotFound(Messages.User_NotFound) : Ok(user);
-    }
-
-    // -------------------------------------------------------------------------
     // ➕ POST /api/users
     // -------------------------------------------------------------------------
     [HttpPost]
@@ -74,18 +52,46 @@ public class UsersController : ControllerBase
     }
 
     // -------------------------------------------------------------------------
+    // 🔍 GET /api/users
+    // -------------------------------------------------------------------------
+    [HttpGet]
+    [Authorize(Roles = "admin,receptionist")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _mediator.Send(new GetAllUsersQuery());
+        return Ok(result);
+    }
+
+    // -------------------------------------------------------------------------
+    // 🔍 GET /api/users/{id}
+    // -------------------------------------------------------------------------
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = "admin,receptionist")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var user = await _mediator.Send(new GetUserByIdQuery(id));
+        return user is null ? NotFound(Messages.User_NotFound) : Ok(user);
+    }
+
+
+    // -------------------------------------------------------------------------
     // ✏️ PUT /api/users/{id}
     // -------------------------------------------------------------------------
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserCommand command)
     {
-        if (id != command.Id)
+        // If the body ever includes Id (future change), validate mismatch.
+        if (command.Id != Guid.Empty && command.Id != id)
             return BadRequest(Messages.Validation_Id_Mismatch);
 
-        await _mediator.Send(command);
+        // Id comes from route; fix the command with the path Id
+        var fixedCommand = command with { Id = id };
+
+        await _mediator.Send(fixedCommand);
         return NoContent();
     }
+
 
     // -------------------------------------------------------------------------
     // ❌ DELETE /api/users/{id}

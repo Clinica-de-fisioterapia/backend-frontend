@@ -377,9 +377,6 @@
           }
         },
         "resources": {
-          "en-US/Chronosystem.Application.resources.dll": {
-            "locale": "en-US"
-          },
           "pt-BR/Chronosystem.Application.resources.dll": {
             "locale": "pt-BR"
           }
