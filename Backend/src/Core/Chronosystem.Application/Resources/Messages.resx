@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype">
-    <value>text/microsoft-resx</value>
-  </resheader>
-  <resheader name="version">
-    <value>2.0</value>
-  </resheader>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader">
     <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
@@ -75,6 +71,9 @@
   <data name="User_Email_Invalid" xml:space="preserve">
     <value>The email format is invalid.</value>
   </data>
+  <data name="User_Role_Invalid" xml:space="preserve">
+    <value>The role must start with a letter and may contain letters, numbers, or underscores (max 50 characters).</value>
+  </data>
 
   <!-- ✅ New messages added -->
   <data name="User_Inactive" xml:space="preserve">
@@ -82,5 +81,29 @@
   </data>
   <data name="User_Password_Invalid" xml:space="preserve">
     <value>Invalid password. Please check your credentials.</value>
+  </data>
+  <data name="Tenant_Subdomain_Invalid" xml:space="preserve">
+    <value>The subdomain must contain only lowercase letters, numbers, and hyphens (cannot start or end with hyphen).</value>
+  </data>
+  <data name="Tenant_Subdomain_AlreadyExists" xml:space="preserve">
+    <value>This subdomain is already in use.</value>
+  </data>
+  <data name="Tenant_Header_Required" xml:space="preserve">
+    <value>Provide the X-Tenant header with the tenant subdomain.</value>
+  </data>
+  <data name="Tenant_Header_InvalidFormat" xml:space="preserve">
+    <value>The X-Tenant header value is invalid. Use lowercase letters, numbers, and hyphens only.</value>
+  </data>
+  <data name="Tenant_Header_MissingClaim" xml:space="preserve">
+    <value>The JWT token does not include the tenant claim.</value>
+  </data>
+  <data name="Tenant_Header_Mismatch" xml:space="preserve">
+    <value>The tenant from the token does not match the X-Tenant header.</value>
+  </data>
+  <data name="Auth_SignUp_Success" xml:space="preserve">
+    <value>Sign-up completed successfully.</value>
+  </data>
+  <data name="Auth_Refresh_InvalidOrExpired" xml:space="preserve">
+    <value>The refresh token is invalid or has already expired.</value>
   </data>
 </root>

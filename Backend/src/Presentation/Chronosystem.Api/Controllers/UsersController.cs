@@ -11,18 +11,18 @@ using Chronosystem.Application.Features.Users.Queries.GetAllUsers;
 using Chronosystem.Application.Features.Users.Queries.GetUserById;
 using Chronosystem.Application.Features.Users.DTOs;
 using Chronosystem.Application.Resources;
-using Chronosystem.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Chronosystem.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize] // pode ser reativado conforme a política de segurança
+[Authorize] // pode ser reativado conforme a política de segurança
 public class UsersController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -30,32 +30,10 @@ public class UsersController : ControllerBase
     public UsersController(IMediator mediator) => _mediator = mediator;
 
     // -------------------------------------------------------------------------
-    // 🔍 GET /api/users
-    // -------------------------------------------------------------------------
-    [HttpGet]
-    [Authorize(Roles = "Admin,Receptionist")]
-    public async Task<IActionResult> GetAll()
-    {
-        var result = await _mediator.Send(new GetAllUsersQuery());
-        return Ok(result);
-    }
-
-    // -------------------------------------------------------------------------
-    // 🔍 GET /api/users/{id}
-    // -------------------------------------------------------------------------
-    [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,Receptionist")]
-    public async Task<IActionResult> GetById(Guid id)
-    {
-        var user = await _mediator.Send(new GetUserByIdQuery(id));
-        return user is null ? NotFound(Messages.User_NotFound) : Ok(user);
-    }
-
-    // -------------------------------------------------------------------------
     // ➕ POST /api/users
     // -------------------------------------------------------------------------
     [HttpPost]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
     {
         if (dto is null)
@@ -74,24 +52,52 @@ public class UsersController : ControllerBase
     }
 
     // -------------------------------------------------------------------------
+    // 🔍 GET /api/users
+    // -------------------------------------------------------------------------
+    [HttpGet]
+    [Authorize(Roles = "admin,receptionist")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _mediator.Send(new GetAllUsersQuery());
+        return Ok(result);
+    }
+
+    // -------------------------------------------------------------------------
+    // 🔍 GET /api/users/{id}
+    // -------------------------------------------------------------------------
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = "admin,receptionist")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var user = await _mediator.Send(new GetUserByIdQuery(id));
+        return user is null ? NotFound(Messages.User_NotFound) : Ok(user);
+    }
+
+
+    // -------------------------------------------------------------------------
     // ✏️ PUT /api/users/{id}
     // -------------------------------------------------------------------------
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserCommand command)
     {
-        if (id != command.Id)
+        // If the body ever includes Id (future change), validate mismatch.
+        if (command.Id != Guid.Empty && command.Id != id)
             return BadRequest(Messages.Validation_Id_Mismatch);
 
-        await _mediator.Send(command);
+        // Id comes from route; fix the command with the path Id
+        var fixedCommand = command with { Id = id };
+
+        await _mediator.Send(fixedCommand);
         return NoContent();
     }
+
 
     // -------------------------------------------------------------------------
     // ❌ DELETE /api/users/{id}
     // -------------------------------------------------------------------------
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _mediator.Send(new DeleteUserCommand(id));
@@ -102,15 +108,16 @@ public class UsersController : ControllerBase
     // ⚙️ GET /api/users/roles
     // -------------------------------------------------------------------------
     [HttpGet("roles")]
-    [Authorize(Roles = "Admin,Receptionist")]
-    public IActionResult GetRoles()
+    [Authorize(Roles = "admin,receptionist")]
+    public async Task<IActionResult> GetRoles()
     {
-        var roles = Enum.GetValues(typeof(UserRole));
-        var response = new
-        {
-            byName = Enum.GetNames(typeof(UserRole)),
-            byValue = roles
-        };
-        return Ok(response);
+        var users = await _mediator.Send(new GetAllUsersQuery());
+        var roles = users
+            .Select(u => u.Role)
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(role => role, StringComparer.OrdinalIgnoreCase);
+
+        return Ok(new { roles });
     }
 }

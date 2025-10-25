@@ -4,7 +4,6 @@
 // OBJETIVO: Define o comando responsável por criar um novo usuário no sistema.
 // ======================================================================================
 
-using Chronosystem.Domain.Enums;
 using MediatR;
 using System;
 
@@ -17,5 +16,5 @@ public sealed record CreateUserCommand(
     string FullName,
     string Email,
     string Password,
-    UserRole Role
+    string Role
 ) : IRequest<Guid>;

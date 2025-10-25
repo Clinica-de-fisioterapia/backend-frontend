@@ -1,6 +1,13 @@
-namespace Chronosystem.Domain.Common;
+using System;
 
-public abstract class BaseEntity
+namespace Chronosystem.Domain.Common
 {
-    public Guid Id { get; set; }
+    /// <summary>Base enxuta: apenas identidade (e opcionalmente concurrency).</summary>
+    public abstract class BaseEntity
+    {
+        public Guid Id { get; protected set; }
+
+        // Concurrency/ETag opcional; mantenha se existir coluna no banco
+        public long RowVersion { get; set; }
+    }
 }

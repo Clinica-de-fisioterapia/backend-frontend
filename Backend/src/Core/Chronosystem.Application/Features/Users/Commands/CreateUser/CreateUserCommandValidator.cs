@@ -33,7 +33,9 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
             .MaximumLength(100).WithMessage(Messages.Validation_MaxLength);
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage(Messages.Validation_InvalidFormat);
+            .NotEmpty().WithMessage(Messages.Validation_RequiredField)
+            .Matches("^[A-Za-z][A-Za-z0-9_]{0,49}$")
+            .WithMessage(Messages.User_Role_Invalid);
     }
 
     private static bool BeAValidEmail(string email)

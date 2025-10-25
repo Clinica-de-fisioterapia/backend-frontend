@@ -4,7 +4,6 @@
 // OBJETIVO: Representa os dados de entrada para criação de um novo usuário.
 // ======================================================================================
 
-using Chronosystem.Domain.Enums;
 using System;
 
 namespace Chronosystem.Application.Features.Users.DTOs;
@@ -32,5 +31,5 @@ public sealed class CreateUserDto
     /// <summary>
     /// Papel (role) atribuído ao usuário.
     /// </summary>
-    public UserRole Role { get; init; }
+    public string Role { get; init; } = string.Empty;
 }

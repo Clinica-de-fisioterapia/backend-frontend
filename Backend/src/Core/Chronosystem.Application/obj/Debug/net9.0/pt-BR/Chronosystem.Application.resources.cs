@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Chronosystem.Application")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute(" ")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e32a98e5bebcd5aace8d071491f17075cc2024c7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+16622a5b94218f5afd68929d4198da8d6af73cf6")]
 [assembly: System.Reflection.AssemblyProductAttribute("Chronosystem.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Chronosystem.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

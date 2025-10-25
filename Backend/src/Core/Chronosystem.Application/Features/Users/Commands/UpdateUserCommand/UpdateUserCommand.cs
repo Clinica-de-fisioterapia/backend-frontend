@@ -4,20 +4,21 @@
 // OBJETIVO: Define o comando responsável por atualizar dados de um usuário existente.
 // ======================================================================================
 
-using Chronosystem.Domain.Enums;
 using MediatR;
 using System;
+using System.Text.Json.Serialization;
 
 namespace Chronosystem.Application.Features.Users.Commands.UpdateUserCommand;
 
 /// <summary>
 /// Comando CQRS responsável por atualizar os dados de um usuário existente.
+/// O Id vem da rota (PUT /api/users/{id}) e é atribuído no controller.
 /// </summary>
 public sealed record UpdateUserCommand(
-    Guid Id,
+    [property: JsonIgnore] Guid Id,   
     string FullName,
     string Email,
     string? Password,
-    UserRole Role,
+    string Role,
     bool IsActive
 ) : IRequest;

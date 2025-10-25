@@ -1,27 +1,54 @@
-using Chronosystem.Domain.Entities; // Supondo que a entidade Tenant esteja aqui
+using System;
+using Chronosystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Chronosystem.Infrastructure.Persistence.DbContexts;
 
-// Este DbContext só se preocupa com o esquema 'public'.
+/// <summary>
+/// DbContext bound to the global public schema (catalog tables).
+/// Use this context only for cross-tenant, public schema data (e.g., tenant catalog).
+/// </summary>
 public class PublicDbContext : DbContext
 {
     public PublicDbContext(DbContextOptions<PublicDbContext> options) : base(options) { }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
-    // public DbSet<Plan> Plans => Set<Plan>(); // Se a tabela 'plans' também for pública
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        // Garante que este contexto sempre use o esquema 'public'
-        modelBuilder.HasDefaultSchema("public");
 
-        // Configuração da entidade Tenant
+        // ----- TENANTS (public.tenants) -----
         modelBuilder.Entity<Tenant>(entity =>
         {
-            entity.ToTable("tenants");
-            // ... outras configurações se necessário
+            // Table mapping: schema public, table tenants
+            entity.ToTable("tenants", schema: "public");
+
+            // Primary key: use inherited Id and map to column "tenant_id"
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id)
+                  .HasColumnName("tenant_id")
+                  .IsRequired();
+
+            entity.Property(x => x.Slug)
+                  .HasColumnName("slug")
+                  .IsRequired();
+
+            entity.Property(x => x.Name)
+                  .HasColumnName("name")
+                  .IsRequired();
+
+            entity.Property(x => x.IsActive)
+                  .HasColumnName("is_active")
+                  .IsRequired();
+
+            // Auditable columns (keep if base doesn't already configure them)
+            entity.Property<DateTime>("created_at").HasColumnName("created_at");
+            entity.Property<DateTime?>("updated_at").HasColumnName("updated_at");
+            entity.Property<DateTime?>("deleted_at").HasColumnName("deleted_at");
+
+            // Unique index on slug (matches DB)
+            entity.HasIndex(x => x.Slug).IsUnique();
         });
     }
 }

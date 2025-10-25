@@ -1,4 +1,7 @@
+using System;
 using System.Text.RegularExpressions;
+using Chronosystem.Application.Resources;
+using Microsoft.AspNetCore.Http;
 
 namespace Chronosystem.Api.Middleware;
 
@@ -13,23 +16,30 @@ public class TenantResolverMiddleware
         _next = next;
     }
 
+    private static readonly Regex TenantRegex = new("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly PathString SignUpPath = new("/api/auth/signup");
+
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Headers.TryGetValue("X-Tenant", out var tenantSubdomainValue))
+        if (context.Request.Path.Equals(SignUpPath, StringComparison.OrdinalIgnoreCase) &&
+            HttpMethods.IsPost(context.Request.Method))
         {
-            var schema = tenantSubdomainValue.ToString();
-
-            if (string.IsNullOrWhiteSpace(schema) || !Regex.IsMatch(schema, @"^[a-zA-Z0-9_]+$"))
-            {
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsync("Invalid tenant format in X-Tenant header.");
-                return;
-            }
+            await _next(context);
+            return;
         }
-        else
+
+        if (!context.Request.Headers.TryGetValue("X-Tenant", out var tenantSubdomainValue))
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsync("X-Tenant header is required.");
+            await context.Response.WriteAsJsonAsync(new { error = Messages.Tenant_Header_Required });
+            return;
+        }
+
+        var schema = tenantSubdomainValue.ToString();
+        if (string.IsNullOrWhiteSpace(schema) || !TenantRegex.IsMatch(schema))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new { error = Messages.Tenant_Header_InvalidFormat });
             return;
         }
 
