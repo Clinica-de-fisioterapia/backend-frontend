@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Chronosystem.Api.Controllers;
@@ -39,13 +40,20 @@ public class UsersController : ControllerBase
         if (dto is null)
             return BadRequest(Messages.Validation_Request_Invalid);
 
+        var actorId = GetActorId();
+        if (actorId == Guid.Empty)
+            return Unauthorized();
+
         // Conversão segura DTO -> Command
         var command = new CreateUserCommand(
             dto.FullName,
             dto.Email,
             dto.Password,
             dto.Role
-        );
+        )
+        {
+            ActorUserId = actorId
+        };
 
         var userId = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id = userId }, new { id = userId });
@@ -81,12 +89,16 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserCommand command)
     {
+        var actorId = GetActorId();
+        if (actorId == Guid.Empty)
+            return Unauthorized();
+
         // If the body ever includes Id (future change), validate mismatch.
         if (command.Id != Guid.Empty && command.Id != id)
             return BadRequest(Messages.Validation_Id_Mismatch);
 
         // Id comes from route; fix the command with the path Id
-        var fixedCommand = command with { Id = id };
+        var fixedCommand = command with { Id = id, ActorUserId = actorId };
 
         await _mediator.Send(fixedCommand);
         return NoContent();
@@ -100,7 +112,14 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _mediator.Send(new DeleteUserCommand(id));
+        var actorId = GetActorId();
+        if (actorId == Guid.Empty)
+            return Unauthorized();
+
+        await _mediator.Send(new DeleteUserCommand(id)
+        {
+            ActorUserId = actorId
+        });
         return NoContent();
     }
 
@@ -120,4 +139,7 @@ public class UsersController : ControllerBase
 
         return Ok(new { roles });
     }
+
+    private Guid GetActorId() =>
+        Guid.TryParse(User.FindFirst("sub")?.Value, out var id) ? id : Guid.Empty;
 }

@@ -17,4 +17,7 @@ public sealed record CreateUserCommand(
     string Email,
     string Password,
     string Role
-) : IRequest<Guid>;
+) : IRequest<Guid>
+{
+    public Guid ActorUserId { get; init; }
+}

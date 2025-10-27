@@ -41,10 +41,10 @@ public sealed class UserDto
     /// <summary>
     /// Data e hora de criação (UTC).
     /// </summary>
-    public DateTime CreatedAt { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
 
     /// <summary>
     /// Data e hora da última atualização (UTC).
     /// </summary>
-    public DateTime UpdatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
 }

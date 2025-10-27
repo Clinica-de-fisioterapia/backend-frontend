@@ -29,6 +29,11 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>
 
     public async Task<Guid> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
+        if (request.ActorUserId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Actor user id is required for auditing.");
+        }
+
         if (await _userRepository.UserExistsByEmailAsync(request.Email, cancellationToken))
         {
             throw new ValidationException(new[]
@@ -41,6 +46,9 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var user = User.Create(request.FullName, request.Email, passwordHash, request.Role);
+
+        user.CreatedBy = request.ActorUserId;
+        user.UpdatedBy = request.ActorUserId;
 
         // AddAsync() recebe apenas a entidade
         await _userRepository.AddAsync(user);

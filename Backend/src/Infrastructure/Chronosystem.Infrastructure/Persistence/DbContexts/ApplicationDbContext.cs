@@ -27,9 +27,6 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
         base.OnModelCreating(modelBuilder);
 
         // ===== User =====
-        modelBuilder.Entity<User>().Ignore(u => u.CreatedBy);
-        modelBuilder.Entity<User>().Ignore(u => u.UpdatedBy);
-
         modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("users");
@@ -38,6 +35,34 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
             entity.Property(u => u.FullName).HasMaxLength(255).IsRequired();
             entity.Property(u => u.Email).HasMaxLength(255).HasColumnType("citext").IsRequired();
             entity.Property(u => u.PasswordHash).HasMaxLength(255).IsRequired();
+
+            entity.Property(u => u.CreatedBy)
+                  .HasColumnName("created_by")
+                  .IsRequired(false);
+
+            entity.Property(u => u.UpdatedBy)
+                  .HasColumnName("updated_by")
+                  .IsRequired(false);
+
+            var created = entity.Property(u => u.CreatedAt)
+                                 .HasColumnName("created_at")
+                                 .HasColumnType("timestamp with time zone")
+                                 .HasDefaultValueSql("now()")
+                                 .ValueGeneratedOnAdd();
+            created.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
+            created.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+
+            var updated = entity.Property(u => u.UpdatedAt)
+                                 .HasColumnName("updated_at")
+                                 .HasColumnType("timestamp with time zone")
+                                 .HasDefaultValueSql("now()")
+                                 .ValueGeneratedOnAddOrUpdate();
+            updated.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
+            updated.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+
+            entity.Property(u => u.DeletedAt)
+                  .HasColumnName("deleted_at")
+                  .HasColumnType("timestamp with time zone");
 
             entity.HasIndex(u => u.Email).IsUnique();
 

@@ -21,4 +21,8 @@ public sealed record UpdateUserCommand(
     string? Password,
     string Role,
     bool IsActive
-) : IRequest;
+) : IRequest
+{
+    [JsonIgnore]
+    public Guid ActorUserId { get; init; }
+}

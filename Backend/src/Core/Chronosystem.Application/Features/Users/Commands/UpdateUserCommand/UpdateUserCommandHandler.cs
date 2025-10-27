@@ -27,6 +27,11 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Unit>
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
     {
+        if (request.ActorUserId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Actor user id is required for auditing.");
+        }
+
         var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new InvalidOperationException($"Usuário com ID {request.Id} não encontrado.");
 
@@ -41,6 +46,8 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Unit>
 
         user.UpdateRole(request.Role);
         user.UpdateIsActive(request.IsActive);
+
+        user.UpdatedBy = request.ActorUserId;
 
         _userRepository.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
