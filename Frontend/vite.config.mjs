@@ -5,5 +5,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    proxy: {
+      // redireciona /api para o backend em desenvolvimento (porta correta: 5238)
+      '/api': {
+        target: 'http://localhost:5238',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });

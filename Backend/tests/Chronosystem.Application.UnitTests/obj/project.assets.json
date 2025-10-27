@@ -1082,40 +1082,32 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\User\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\Gabriel\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\tests\\Chronosystem.Application.UnitTests\\Chronosystem.Application.UnitTests.csproj",
+      "projectUniqueName": "C:\\Users\\Gabriel\\OneDrive\\Documentos\\backend-frontend\\Backend\\tests\\Chronosystem.Application.UnitTests\\Chronosystem.Application.UnitTests.csproj",
       "projectName": "Chronosystem.Application.UnitTests",
-      "projectPath": "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\tests\\Chronosystem.Application.UnitTests\\Chronosystem.Application.UnitTests.csproj",
-      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\tests\\Chronosystem.Application.UnitTests\\obj\\",
+      "projectPath": "C:\\Users\\Gabriel\\OneDrive\\Documentos\\backend-frontend\\Backend\\tests\\Chronosystem.Application.UnitTests\\Chronosystem.Application.UnitTests.csproj",
+      "packagesPath": "C:\\Users\\Gabriel\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Gabriel\\OneDrive\\Documentos\\backend-frontend\\Backend\\tests\\Chronosystem.Application.UnitTests\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\Gabriel\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\src\\Core\\Chronosystem.Application\\Chronosystem.Application.csproj": {
-              "projectPath": "C:\\Users\\User\\Documents\\GitHub\\backend-frontend\\Backend\\src\\Core\\Chronosystem.Application\\Chronosystem.Application.csproj"
+            "C:\\Users\\Gabriel\\OneDrive\\Documentos\\backend-frontend\\Backend\\src\\Core\\Chronosystem.Application\\Chronosystem.Application.csproj": {
+              "projectPath": "C:\\Users\\Gabriel\\OneDrive\\Documentos\\backend-frontend\\Backend\\src\\Core\\Chronosystem.Application\\Chronosystem.Application.csproj"
             }
           }
         }
@@ -1130,7 +1122,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net9.0": {
@@ -1168,12 +1160,26 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[9.0.10, 9.0.10]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[9.0.10, 9.0.10]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[9.0.10, 9.0.10]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100-rc.2.25502.107/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

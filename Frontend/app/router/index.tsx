@@ -4,6 +4,7 @@ import RegisterUnitPage from "../../features/auth/pages/RegisterUnitPage";
 import Login from "../../pages/Login/Login";
 import Agendamento from "../../features/scheduling/Agendamento";
 import Menu from "../../features/menu/Menu";
+import Register from "../../pages/Register/Register";
 // ... outras imports
 
 export const router = createBrowserRouter([
@@ -22,6 +23,10 @@ export const router = createBrowserRouter([
   {
     path: "/agendamento",
     element: <Agendamento />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
   },
   // ... outras rotas existentes
 ]);
