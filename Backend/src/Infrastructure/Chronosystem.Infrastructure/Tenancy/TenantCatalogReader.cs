@@ -27,6 +27,7 @@ public sealed class TenantCatalogReader : ITenantCatalogReader
             return false;
         }
 
+        // IMPORTANT: no trailing semicolon inside the EXISTS subquery and add alias "Value"
         return await _dbContext.Database
             .SqlQueryRaw<bool>(@"
                 SELECT EXISTS (
@@ -34,7 +35,7 @@ public sealed class TenantCatalogReader : ITenantCatalogReader
                     FROM public.tenants
                     WHERE deleted_at IS NULL
                       AND LOWER(slug) = LOWER({0})
-                );", candidate)
+                ) AS ""Value""", candidate)
             .SingleAsync(cancellationToken);
     }
 
