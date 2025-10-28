@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Chronosystem.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ac25c240afab2fd57adb47d2cc3abcc9cecb2358")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e05f0cdd4b6c5dec45fa404f8cb5a5c69c1cec67")]
 [assembly: System.Reflection.AssemblyProductAttribute("Chronosystem.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Chronosystem.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
