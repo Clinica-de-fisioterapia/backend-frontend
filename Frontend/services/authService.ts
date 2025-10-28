@@ -12,6 +12,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  AccessToken: string;
   accessToken: string;
   refreshToken: string;
   userId: string;
@@ -35,22 +36,68 @@ class AuthService {
 
   async login(email: string, password: string, tenant: string): Promise<LoginResponse> {
     try {
+      // envia o payload com as propriedades que o backend espera (Email / Password)
+      const payload = { Email: email, Password: password };
+
       const response = await apiClient.post<LoginResponse>(
         `/auth/login`,
-        { email, password, tenant },
-        { headers: { 'X-Tenant-Id': tenant } }
+        payload,
+        // backend espera header "X-Tenant"
+        { headers: { 'X-Tenant': tenant } }
       );
 
-      const { accessToken, refreshToken, userId, email: userEmail, expiresIn } = response.data;
+      const { AccessToken, RefreshToken, User, ExpiresAtUtc } = (response.data as any);
 
-      // Armazena os tokens e dados do usuário
-      this.setTokens(accessToken, refreshToken, userId, userEmail, tenant);
+      // adaptação caso o backend retorne nomes diferentes
+      const accessToken = response.data.accessToken ?? response.data.accessToken ?? (response.data as any).accessToken;
+      const refreshToken = response.data.refreshToken ?? response.data.refreshToken ?? (response.data as any).refreshToken;
+      const userId = response.data.userId ?? (response.data as any).user?.id ?? (response.data as any).User?.Id ?? (response.data as any).User?.Id;
+      const userEmail = response.data.email ?? (response.data as any).user?.email ?? (response.data as any).User?.Email;
+      const expiresIn = response.data.expiresIn ?? 0;
 
-      return response.data;
+      // Armazena os tokens e dados do usuário (valide que accessToken/refreshToken existem)
+      if (!accessToken || !refreshToken) {
+        // tenta extrair mensagem do corpo se houver
+        const body = response.data as any;
+        console.warn('[authService] login: tokens não encontrados na resposta', body);
+        throw new Error('Resposta de autenticação inválida do servidor.');
+      }
+
+      this.setTokens(accessToken, refreshToken, userId ?? '', userEmail ?? '', tenant);
+
+      return {
+        AccessToken: accessToken,
+        accessToken,
+        refreshToken,
+        userId: userId ?? '',
+        email: userEmail ?? '',
+        expiresIn
+      };
     } catch (error: any) {
-      const msg = error?.response?.data?.message
-        || `Erro ao fazer login (status: ${error?.response?.status ?? 'N/A'})`;
-      throw new Error(msg);
+      // preferir mensagens claras do servidor (error / message / title / detail)
+      const resp = error?.response?.data;
+      const serverMsg =
+        resp?.error ||
+        resp?.message ||
+        resp?.title ||
+        resp?.detail ||
+        (typeof resp === 'string' ? resp : null);
+
+      if (serverMsg) {
+        throw new Error(String(serverMsg));
+      }
+
+      if (error?.response) {
+        // resposta recebida, código 4xx/5xx, mas sem body legível
+        throw new Error(`Erro ao fazer login (status: ${error.response.status})`);
+      }
+
+      // sem resposta -> erro de rede/proxy
+      if (error?.request || error?.message) {
+        throw new Error('Falha de conexão com o backend. Verifique se o servidor está rodando em http://localhost:5238');
+      }
+
+      throw new Error('Erro desconhecido ao fazer login');
     }
   }
 
@@ -65,16 +112,17 @@ class AuthService {
     try {
       const response = await apiClient.post<{ accessToken: string; expiresIn: number }>(
         `/auth/refresh`,
-        { refreshToken, tenant },
-        { headers: { 'X-Tenant-Id': tenant } }
+        { RefreshToken: refreshToken },
+        { headers: { 'X-Tenant': tenant } }
       );
 
-      const { accessToken } = response.data;
+      const accessToken = response.data.accessToken ?? (response.data as any).AccessToken;
+      if (!accessToken) throw new Error('Resposta inválida do servidor ao renovar token.');
+
       localStorage.setItem(this.storageKeys.accessToken, accessToken);
 
       return accessToken;
     } catch (error) {
-      // Se falhar o refresh, faz logout
       this.logout();
       throw new Error('Sessão expirada. Faça login novamente.');
     }
@@ -95,9 +143,9 @@ class AuthService {
   ): void {
     localStorage.setItem(this.storageKeys.accessToken, accessToken);
     localStorage.setItem(this.storageKeys.refreshToken, refreshToken);
-    localStorage.setItem(this.storageKeys.userId, userId);
-    localStorage.setItem(this.storageKeys.email, email);
-    localStorage.setItem(this.storageKeys.tenant, tenant);
+    if (userId) localStorage.setItem(this.storageKeys.userId, userId);
+    if (email) localStorage.setItem(this.storageKeys.email, email);
+    if (tenant) localStorage.setItem(this.storageKeys.tenant, tenant);
   }
 
   getAccessToken(): string | null {
@@ -140,28 +188,24 @@ class AuthService {
         AdminPassword: data.adminPassword
       };
 
-      // usa apiClient que aponta para /api (ou VITE_API_URL se definido)
+      // envia header X-Tenant (o controller usa X-Tenant)
       await apiClient.post(`/auth/signup`, payload, {
         headers: { 'X-Tenant': data.tenant ?? 'default' }
       });
     } catch (error: any) {
-      // Caso haja resposta do servidor (500, 400, etc.)
       if (error?.response) {
         const resp = error.response.data;
-        const respMsg = resp?.error || resp?.message || (typeof resp === 'string' ? resp : null);
+        const respMsg = resp?.error || resp?.message || resp?.title || resp?.detail || (typeof resp === 'string' ? resp : null);
         const status = error.response.status;
         if (respMsg) throw new Error(String(respMsg));
         if (status === 409) throw new Error('Este email já está cadastrado');
         throw new Error(`Erro ao criar conta (status: ${status ?? 'N/A'})`);
       }
 
-      // Caso não haja resposta => erro de rede / proxy / backend offline
       if (error?.request || error?.message) {
-        // Mensagem clara para o desenvolvedor/usuário
         throw new Error('Falha de conexão com o backend. Verifique se o servidor está rodando em http://localhost:5238');
       }
 
-      // fallback
       throw new Error('Erro desconhecido ao criar conta');
     }
   }
