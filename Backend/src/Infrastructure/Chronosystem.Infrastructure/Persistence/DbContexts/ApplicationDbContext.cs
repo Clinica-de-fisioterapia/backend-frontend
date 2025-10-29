@@ -4,6 +4,7 @@
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Domain.Entities;
+using Chronosystem.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata; // PropertySaveBehavior
 using System;
@@ -26,10 +27,9 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     {
         base.OnModelCreating(modelBuilder);
 
-        // ===== User =====
-        modelBuilder.Entity<User>().Ignore(u => u.CreatedBy);
-        modelBuilder.Entity<User>().Ignore(u => u.UpdatedBy);
+        modelBuilder.ApplyConfiguration(new UnitConfiguration());
 
+        // ===== User =====
         modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("users");
@@ -44,7 +44,14 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
             entity.Property(u => u.Role).HasMaxLength(50).IsRequired();
             entity.Property(u => u.IsActive).HasDefaultValue(true).IsRequired();
 
+            entity.Property(u => u.CreatedBy)
+                  .HasColumnName("created_by");
+
+            entity.Property(u => u.UpdatedBy)
+                  .HasColumnName("updated_by");
+
             entity.Property(u => u.RowVersion)
+                  .HasColumnName("row_version")
                   .IsConcurrencyToken()
                   .ValueGeneratedOnAddOrUpdate();
 

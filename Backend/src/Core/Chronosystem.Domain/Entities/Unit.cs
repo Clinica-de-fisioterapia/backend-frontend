@@ -71,12 +71,6 @@ public class Unit : AuditableEntity
 
     /// <summary>
     /// Marca a unidade como excluída logicamente.
-    /// O campo "deleted_at" será preenchido automaticamente pelo banco via trigger.
     /// </summary>
-    public void SoftDelete()
-    {
-        // Apenas sinaliza a intenção de exclusão lógica.
-        // O PostgreSQL definirá o timestamp (deleted_at) via trigger.
-        DeletedAt = null;
-    }
+    public void SoftDelete(Guid? actorUserId = null) => base.SoftDelete(actorUserId);
 }

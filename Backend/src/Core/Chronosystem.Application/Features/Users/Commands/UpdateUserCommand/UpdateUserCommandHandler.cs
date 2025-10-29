@@ -42,6 +42,8 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Unit>
         user.UpdateRole(request.Role);
         user.UpdateIsActive(request.IsActive);
 
+        user.UpdatedBy = request.ActorUserId;
+
         _userRepository.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

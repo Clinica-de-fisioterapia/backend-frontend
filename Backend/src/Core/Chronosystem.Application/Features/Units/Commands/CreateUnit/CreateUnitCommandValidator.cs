@@ -24,12 +24,10 @@ public class CreateUnitCommandValidator : AbstractValidator<CreateUnitCommand>
             .WithMessage(Messages.Unit_Name_MaxLength);
 
         // ---------------------------------------------------------------------
-        // Regra 2: Usuário responsável é obrigatório e deve ser um GUID válido
+        // Regra 2: Ator autenticado deve estar presente (preenchido no servidor)
         // ---------------------------------------------------------------------
-        RuleFor(x => x.UserId)
-            .NotNull()
-            .WithMessage(Messages.Validation_UserId_Required)
-            .Must(id => id.HasValue && id != Guid.Empty)
+        RuleFor(x => x.ActorUserId)
+            .NotEmpty()
             .WithMessage(Messages.Validation_UserId_Required);
     }
 }

@@ -5,11 +5,11 @@
 //            Aplica CQRS com MediatR, validações multilíngues e autorização por papéis.
 // ======================================================================================
 
+using Chronosystem.Api.Extensions;
 using Chronosystem.Application.Features.Units.DTOs;
-using Chronosystem.Application.Resources;
 using Chronosystem.Application.UseCases.Units.Commands.CreateUnit;
-using Chronosystem.Application.UseCases.Units.Commands.UpdateUnit;
 using Chronosystem.Application.UseCases.Units.Commands.DeleteUnit;
+using Chronosystem.Application.UseCases.Units.Commands.UpdateUnit;
 using Chronosystem.Application.UseCases.Units.Queries.GetAllUnits;
 using Chronosystem.Application.UseCases.Units.Queries.GetUnitById;
 using MediatR;
@@ -20,7 +20,6 @@ namespace Chronosystem.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize] // Desativado temporariamente para testes sem JWT
 public class UnitsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -35,9 +34,19 @@ public class UnitsController : ControllerBase
     // -------------------------------------------------------------------------
     /// <summary>Cria uma nova unidade (restrito a administradores).</summary>
     [HttpPost]
-    //[Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create([FromBody] CreateUnitCommand command, CancellationToken cancellationToken)
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Create([FromBody] CreateUnitDto dto, CancellationToken cancellationToken)
     {
+        if (dto is null)
+            return BadRequest("Requisição inválida.");
+
+        var actorId = User.GetActorUserIdOrThrow();
+
+        var command = new CreateUnitCommand(dto.Name)
+        {
+            ActorUserId = actorId
+        };
+
         var created = await _mediator.Send(command, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
@@ -61,7 +70,7 @@ public class UnitsController : ControllerBase
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetUnitByIdQuery(id), cancellationToken);
-        return Ok(result);
+        return result is null ? NotFound() : Ok(result);
     }
 
     // -------------------------------------------------------------------------
@@ -69,10 +78,19 @@ public class UnitsController : ControllerBase
     // -------------------------------------------------------------------------
     /// <summary>Atualiza uma unidade existente.</summary>
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUnitCommand command, CancellationToken cancellationToken)
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUnitDto dto, CancellationToken cancellationToken)
     {
-        // ✅ Define o ID vindo da rota no comando
-        command.Id = id;
+        if (dto is null)
+            return BadRequest("Requisição inválida.");
+
+        var actorId = User.GetActorUserIdOrThrow();
+
+        var command = new UpdateUnitCommand(dto.Name)
+        {
+            Id = id,
+            ActorUserId = actorId
+        };
 
         var updated = await _mediator.Send(command, cancellationToken);
         return Ok(updated);
@@ -84,10 +102,17 @@ public class UnitsController : ControllerBase
     // -------------------------------------------------------------------------
     /// <summary>Realiza exclusão lógica (soft delete) de uma unidade.</summary>
     [HttpDelete("{id:guid}")]
-    //[Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(Guid id, [FromQuery] Guid userId, CancellationToken cancellationToken)
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteUnitCommand(id, userId), cancellationToken);
+        var actorId = User.GetActorUserIdOrThrow();
+
+        var command = new DeleteUnitCommand(id)
+        {
+            ActorUserId = actorId
+        };
+
+        await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 }

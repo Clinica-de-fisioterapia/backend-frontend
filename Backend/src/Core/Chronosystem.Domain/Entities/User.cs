@@ -36,6 +36,6 @@ namespace Chronosystem.Domain.Entities
         public void UpdatePassword(string hash) { if (!string.IsNullOrWhiteSpace(hash)) PasswordHash = hash; }
         public void UpdateRole(string v)        { if (!string.IsNullOrWhiteSpace(v)) Role = v.Trim().ToLowerInvariant(); }
         public void UpdateIsActive(bool v)      => IsActive = v;
-        public void SoftDelete()                => DeletedAt = DateTime.UtcNow;
+        public void SoftDelete(Guid? actorUserId = null) => base.SoftDelete(actorUserId);
     }
 }

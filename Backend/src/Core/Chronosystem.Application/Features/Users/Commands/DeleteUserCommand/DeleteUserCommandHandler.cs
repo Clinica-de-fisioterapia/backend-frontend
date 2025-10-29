@@ -31,7 +31,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Unit>
         if (user is null)
             throw new InvalidOperationException($"Usuário com ID {request.Id} não encontrado.");
 
-        user.SoftDelete();
+        user.SoftDelete(request.ActorUserId);
 
         _userRepository.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
