@@ -4,9 +4,12 @@
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Domain.Entities;
+using Chronosystem.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata; // PropertySaveBehavior
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Chronosystem.Infrastructure.Persistence.DbContexts;
 
@@ -25,6 +28,8 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfiguration(new UnitConfiguration());
 
         // ===== User =====
         modelBuilder.Entity<User>(entity =>

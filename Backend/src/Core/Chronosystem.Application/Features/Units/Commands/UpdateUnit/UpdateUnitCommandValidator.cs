@@ -14,27 +14,18 @@ public class UpdateUnitCommandValidator : AbstractValidator<UpdateUnitCommand>
 {
     public UpdateUnitCommandValidator()
     {
-        // ---------------------------------------------------------------------
-        // Regra 1: ID da unidade é obrigatório
-        // ---------------------------------------------------------------------
         RuleFor(x => x.Id)
             .NotEmpty()
             .WithMessage(Messages.Unit_Id_Required);
 
-        // ---------------------------------------------------------------------
-        // Regra 2: Nome é obrigatório e deve ter no máximo 255 caracteres
-        // ---------------------------------------------------------------------
         RuleFor(x => x.Name)
             .NotEmpty()
             .WithMessage(Messages.Unit_Name_Required)
             .MaximumLength(255)
             .WithMessage(Messages.Unit_Name_MaxLength);
 
-        // ---------------------------------------------------------------------
-        // Regra 3: Usuário responsável é obrigatório
-        // ---------------------------------------------------------------------
-        RuleFor(x => x.UserId)
+        RuleFor(x => x.ActorUserId)
             .NotEmpty()
-            .WithMessage(Messages.Validation_UserId_Required);
+            .WithMessage(Messages.Audit_Actor_Required);
     }
 }

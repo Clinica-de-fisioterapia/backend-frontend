@@ -37,6 +37,12 @@
   <!-- ========================================= -->
   <!-- Units Module -->
   <!-- ========================================= -->
+  <data name="Unit_Id_Required" xml:space="preserve">
+    <value>O identificador da unidade é obrigatório.</value>
+  </data>
+  <data name="Audit_Actor_Required" xml:space="preserve">
+    <value>Usuário autenticado obrigatório para auditoria.</value>
+  </data>
   <data name="Unit_Name_AlreadyExists" xml:space="preserve">
     <value>A unit with this name already exists.</value>
   </data>

@@ -16,36 +16,18 @@ public class UnitConfiguration : IEntityTypeConfiguration<Unit>
 {
     public void Configure(EntityTypeBuilder<Unit> builder)
     {
-        // -------------------------------------------------------------------------
-        // NOME DA TABELA
-        // -------------------------------------------------------------------------
-        // O EFCore.NamingConventions já converte automaticamente "Unit" → "units",
-        // portanto não é necessário especificar builder.ToTable("units").
-        // Isso mantém compatibilidade com múltiplos schemas de tenants.
-        // -------------------------------------------------------------------------
-
-        // -------------------------------------------------------------------------
-        // CHAVE PRIMÁRIA
-        // -------------------------------------------------------------------------
+        builder.ToTable("units");
         builder.HasKey(u => u.Id);
 
-        // O Id será gerado automaticamente pelo PostgreSQL usando gen_random_uuid()
         builder.Property(u => u.Id)
             .HasColumnName("id")
             .HasDefaultValueSql("gen_random_uuid()");
 
-        // -------------------------------------------------------------------------
-        // CAMPOS PRINCIPAIS
-        // -------------------------------------------------------------------------
         builder.Property(u => u.Name)
             .HasColumnName("name")
             .HasMaxLength(255)
             .IsRequired();
 
-        // -------------------------------------------------------------------------
-        // CAMPOS DE AUDITORIA
-        // -------------------------------------------------------------------------
-        // Esses campos são gerenciados pelo PostgreSQL (triggers automáticas).
         builder.Property(u => u.CreatedAt)
             .HasColumnName("created_at")
             .ValueGeneratedOnAdd();
@@ -55,7 +37,21 @@ public class UnitConfiguration : IEntityTypeConfiguration<Unit>
             .ValueGeneratedOnAddOrUpdate();
 
         builder.Property(u => u.DeletedAt)
-            .HasColumnName("deleted_at")
-            .ValueGeneratedOnAddOrUpdate(); // trigger define CURRENT_TIMESTAMP no soft delete
+            .HasColumnName("deleted_at");
+
+        builder.Property(u => u.CreatedBy)
+            .HasColumnName("created_by")
+            .IsRequired(false);
+
+        builder.Property(u => u.UpdatedBy)
+            .HasColumnName("updated_by")
+            .IsRequired(false);
+
+        builder.Property(u => u.RowVersion)
+            .HasColumnName("row_version")
+            .IsConcurrencyToken()
+            .ValueGeneratedOnAddOrUpdate();
+
+        builder.HasQueryFilter(u => u.DeletedAt == null);
     }
 }

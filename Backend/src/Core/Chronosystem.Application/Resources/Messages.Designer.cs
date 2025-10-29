@@ -45,6 +45,7 @@ namespace Chronosystem.Application.Resources
         // 🏢 UNITS
         // =====================================================================
         public static string Unit_Id_Required => Get(nameof(Unit_Id_Required));
+        public static string Audit_Actor_Required => Get(nameof(Audit_Actor_Required));
         public static string Unit_Name_Required => Get(nameof(Unit_Name_Required));
         public static string Unit_Name_MinLength => Get(nameof(Unit_Name_MinLength));
         public static string Unit_Name_MaxLength => Get(nameof(Unit_Name_MaxLength));
