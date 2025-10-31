@@ -14,5 +14,6 @@ export default defineConfig({
       },
     },
   },
-  base: 'https://Clinica-de-fisioterapia.github.io/backend-frontend',
+  // ⚙️ base dinâmica: "/" no dev e "/backend-frontend/" no build
+  base: process.env.NODE_ENV === 'production' ? '/backend-frontend/' : '/',
 });
