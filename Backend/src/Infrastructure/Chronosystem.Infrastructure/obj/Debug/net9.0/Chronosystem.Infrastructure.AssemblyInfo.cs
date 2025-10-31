@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Chronosystem.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e05f0cdd4b6c5dec45fa404f8cb5a5c69c1cec67")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e15ba7cafee683600f5dc7ae04484342b87d192a")]
 [assembly: System.Reflection.AssemblyProductAttribute("Chronosystem.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Chronosystem.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
