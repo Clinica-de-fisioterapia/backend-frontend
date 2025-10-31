@@ -2,13 +2,14 @@
   "name": "frontend",
   "version": "1.0.0",
   "private": true,
+  "homepage": "https://clinica-de-fisioterapia.github.io/backend-frontend/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
-  "homepage": "https://Clinica-de-fisioterapia.github.io/backend-frontend",
   "dependencies": {
     "axios": "^1.6.2",
     "react": "^18.2.0",
