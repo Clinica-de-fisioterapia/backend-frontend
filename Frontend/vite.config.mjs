@@ -14,4 +14,5 @@ export default defineConfig({
       },
     },
   },
+  base: 'https://Clinica-de-fisioterapia.github.io/backend-frontend',
 });
