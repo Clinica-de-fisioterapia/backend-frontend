@@ -17,4 +17,8 @@ public sealed record CreateUserCommand(
     string Email,
     string Password,
     string Role
-) : IRequest<Guid>;
+) : IRequest<Guid>
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Guid ActorUserId { get; set; }
+}

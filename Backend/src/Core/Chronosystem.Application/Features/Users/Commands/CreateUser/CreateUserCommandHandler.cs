@@ -42,6 +42,9 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>
 
         var user = User.Create(request.FullName, request.Email, passwordHash, request.Role);
 
+        user.CreatedBy = request.ActorUserId;
+        user.UpdatedBy = request.ActorUserId;
+
         // AddAsync() recebe apenas a entidade
         await _userRepository.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

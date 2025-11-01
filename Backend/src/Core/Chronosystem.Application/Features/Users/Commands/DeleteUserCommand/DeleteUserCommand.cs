@@ -12,4 +12,8 @@ namespace Chronosystem.Application.Features.Users.Commands.DeleteUserCommand;
 /// <summary>
 /// Comando CQRS responsável por excluir logicamente (soft delete) um usuário.
 /// </summary>
-public sealed record DeleteUserCommand(Guid Id) : IRequest;
+public sealed record DeleteUserCommand(Guid Id) : IRequest
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Guid ActorUserId { get; set; }
+}

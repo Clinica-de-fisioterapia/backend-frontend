@@ -4,7 +4,6 @@
 // dependência), multi-tenant, i18n, validação e o pipeline HTTP.
 // =================================================================================
 
-// --- USING STATEMENTS ---
 using System.Globalization;
 using System.Linq;
 using Chronosystem.Api.Middleware;
@@ -33,10 +32,12 @@ using Microsoft.AspNetCore.Http;                          // IHttpContextAccesso
 using Chronosystem.Infrastructure.Tenancy;                // TenantProvisioningService
 using Microsoft.AspNetCore.Authorization;                 // Authorization options
 using Chronosystem.Infrastructure.Security.Permissions;   // Permission policies
-using Npgsql; 
+using Npgsql;
+using System.IdentityModel.Tokens.Jwt;                    
 
 Npgsql.NpgsqlConnection.ClearAllPools();
 var builder = WebApplication.CreateBuilder(args);
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // =================================================================================
 // 1. CONFIGURAÇÃO DOS SERVIÇOS (Injeção de Dependência)

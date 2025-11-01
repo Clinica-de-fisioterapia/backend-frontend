@@ -7,7 +7,6 @@
 
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Application.Resources;
-using DomainUnit = Chronosystem.Domain.Entities.Unit;
 using MediatR;
 
 namespace Chronosystem.Application.UseCases.Units.Commands.DeleteUnit;
@@ -15,12 +14,10 @@ namespace Chronosystem.Application.UseCases.Units.Commands.DeleteUnit;
 public class DeleteUnitCommandHandler : IRequestHandler<DeleteUnitCommand, MediatR.Unit>
 {
     private readonly IUnitRepository _unitRepository;
-    private readonly IUserRepository _userRepository;
 
-    public DeleteUnitCommandHandler(IUnitRepository unitRepository, IUserRepository userRepository)
+    public DeleteUnitCommandHandler(IUnitRepository unitRepository)
     {
         _unitRepository = unitRepository;
-        _userRepository = userRepository;
     }
 
     public async Task<MediatR.Unit> Handle(DeleteUnitCommand request, CancellationToken cancellationToken)
@@ -30,22 +27,13 @@ public class DeleteUnitCommandHandler : IRequestHandler<DeleteUnitCommand, Media
         if (unit is null)
             throw new InvalidOperationException(Messages.Unit_NotFound);
 
-        // 2️⃣ Valida o ID do usuário
-        if (request.UserId == Guid.Empty)
-            throw new InvalidOperationException(Messages.Validation_UserId_Required);
-
-        // 3️⃣ Garante que o usuário exista (evita FK violation)
-        var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
-        if (user is null)
-            throw new InvalidOperationException(Messages.User_NotFound);
-
-        // 4️⃣ Define o usuário executor
-        unit.UpdatedBy = request.UserId;
+        // 2️⃣ Define o usuário executor a partir do token
+        unit.SoftDelete(request.ActorUserId);
 
         try
         {
-            // 5️⃣ Executa o soft delete (trigger preencherá deleted_at = NOW())
-            await _unitRepository.RemoveAsync(unit, cancellationToken);
+            // 3️⃣ Executa o soft delete (trigger preencherá deleted_at = NOW())
+            _unitRepository.Update(unit);
             await _unitRepository.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)

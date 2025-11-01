@@ -19,10 +19,7 @@ public class UnitConfiguration : IEntityTypeConfiguration<Unit>
         // -------------------------------------------------------------------------
         // NOME DA TABELA
         // -------------------------------------------------------------------------
-        // O EFCore.NamingConventions já converte automaticamente "Unit" → "units",
-        // portanto não é necessário especificar builder.ToTable("units").
-        // Isso mantém compatibilidade com múltiplos schemas de tenants.
-        // -------------------------------------------------------------------------
+        builder.ToTable("units");
 
         // -------------------------------------------------------------------------
         // CHAVE PRIMÁRIA
@@ -43,19 +40,19 @@ public class UnitConfiguration : IEntityTypeConfiguration<Unit>
             .IsRequired();
 
         // -------------------------------------------------------------------------
-        // CAMPOS DE AUDITORIA
+        // CAMPOS DE AUDITORIA (forte)
         // -------------------------------------------------------------------------
-        // Esses campos são gerenciados pelo PostgreSQL (triggers automáticas).
-        builder.Property(u => u.CreatedAt)
-            .HasColumnName("created_at")
-            .ValueGeneratedOnAdd();
+        builder.Property(u => u.CreatedBy)
+            .HasColumnName("created_by");
 
-        builder.Property(u => u.UpdatedAt)
-            .HasColumnName("updated_at")
+        builder.Property(u => u.UpdatedBy)
+            .HasColumnName("updated_by");
+
+        builder.Property(u => u.RowVersion)
+            .HasColumnName("row_version")
+            .IsConcurrencyToken()
             .ValueGeneratedOnAddOrUpdate();
 
-        builder.Property(u => u.DeletedAt)
-            .HasColumnName("deleted_at")
-            .ValueGeneratedOnAddOrUpdate(); // trigger define CURRENT_TIMESTAMP no soft delete
+        builder.HasQueryFilter(u => u.DeletedAt == null);
     }
 }

@@ -31,9 +31,9 @@ public class UpdateUnitCommandValidator : AbstractValidator<UpdateUnitCommand>
             .WithMessage(Messages.Unit_Name_MaxLength);
 
         // ---------------------------------------------------------------------
-        // Regra 3: Usuário responsável é obrigatório
+        // Regra 3: Ator autenticado deve estar presente (preenchido no servidor)
         // ---------------------------------------------------------------------
-        RuleFor(x => x.UserId)
+        RuleFor(x => x.ActorUserId)
             .NotEmpty()
             .WithMessage(Messages.Validation_UserId_Required);
     }

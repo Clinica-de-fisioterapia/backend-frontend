@@ -5,6 +5,7 @@
 //            Utiliza FluentValidation e mensagens multilíngues via .resx.
 // ======================================================================================
 
+using System;
 using Chronosystem.Application.Resources;
 using FluentValidation;
 
@@ -24,12 +25,10 @@ public class DeleteUnitCommandValidator : AbstractValidator<DeleteUnitCommand>
             .WithMessage(Messages.Unit_Id_Required);
 
         // ---------------------------------------------------------------------
-        // Regra 2️⃣: ID do usuário responsável é obrigatório e válido
+        // Regra 2️⃣: Ator autenticado é obrigatório (preenchido pelo servidor)
         // ---------------------------------------------------------------------
-        RuleFor(x => x.UserId)
+        RuleFor(x => x.ActorUserId)
             .NotEmpty()
-            .WithMessage(Messages.Validation_UserId_Required)
-            .Must(id => id != Guid.Empty)
             .WithMessage(Messages.Validation_UserId_Required);
     }
 }

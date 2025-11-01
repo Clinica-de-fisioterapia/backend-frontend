@@ -4,9 +4,10 @@
 // OBJETIVO: Controlador responsável por expor endpoints REST relacionados a usuários.
 // ======================================================================================
 
+using Chronosystem.Api.Extensions;
 using Chronosystem.Application.Features.Users.Commands.CreateUser;
-using Chronosystem.Application.Features.Users.Commands.UpdateUserCommand;
 using Chronosystem.Application.Features.Users.Commands.DeleteUserCommand;
+using Chronosystem.Application.Features.Users.Commands.UpdateUserCommand;
 using Chronosystem.Application.Features.Users.Queries.GetAllUsers;
 using Chronosystem.Application.Features.Users.Queries.GetUserById;
 using Chronosystem.Application.Features.Users.DTOs;
@@ -39,13 +40,18 @@ public class UsersController : ControllerBase
         if (dto is null)
             return BadRequest(Messages.Validation_Request_Invalid);
 
+        var actorId = User.GetActorUserIdOrThrow();
+
         // Conversão segura DTO -> Command
         var command = new CreateUserCommand(
             dto.FullName,
             dto.Email,
             dto.Password,
             dto.Role
-        );
+        )
+        {
+            ActorUserId = actorId
+        };
 
         var userId = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id = userId }, new { id = userId });
@@ -79,16 +85,28 @@ public class UsersController : ControllerBase
     // -------------------------------------------------------------------------
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "admin")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserCommand command)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserDto dto)
     {
-        // If the body ever includes Id (future change), validate mismatch.
-        if (command.Id != Guid.Empty && command.Id != id)
+        if (dto is null)
+            return BadRequest(Messages.Validation_Request_Invalid);
+
+        if (dto.Id != Guid.Empty && dto.Id != id)
             return BadRequest(Messages.Validation_Id_Mismatch);
 
-        // Id comes from route; fix the command with the path Id
-        var fixedCommand = command with { Id = id };
+        var actorId = User.GetActorUserIdOrThrow();
 
-        await _mediator.Send(fixedCommand);
+        var command = new UpdateUserCommand(
+            id,
+            dto.FullName,
+            dto.Email,
+            dto.Password,
+            dto.Role,
+            dto.IsActive)
+        {
+            ActorUserId = actorId
+        };
+
+        await _mediator.Send(command);
         return NoContent();
     }
 
@@ -100,7 +118,14 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _mediator.Send(new DeleteUserCommand(id));
+        var actorId = User.GetActorUserIdOrThrow();
+
+        var command = new DeleteUserCommand(id)
+        {
+            ActorUserId = actorId
+        };
+
+        await _mediator.Send(command);
         return NoContent();
     }
 

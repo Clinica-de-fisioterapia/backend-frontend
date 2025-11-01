@@ -15,10 +15,14 @@ namespace Chronosystem.Application.Features.Users.Commands.UpdateUserCommand;
 /// O Id vem da rota (PUT /api/users/{id}) e é atribuído no controller.
 /// </summary>
 public sealed record UpdateUserCommand(
-    [property: JsonIgnore] Guid Id,   
+    [property: JsonIgnore] Guid Id,
     string FullName,
     string Email,
     string? Password,
     string Role,
     bool IsActive
-) : IRequest;
+) : IRequest
+{
+    [JsonIgnore]
+    public Guid ActorUserId { get; set; }
+}
