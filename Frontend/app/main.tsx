@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { RouterProvider } from "react-router-dom";
-import { router } from "./router";
+import App from "../App";
 import { AuthProvider } from "./providers/AuthProvider";
 import { QueryProvider } from "./providers/QueryProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
@@ -11,7 +10,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <QueryProvider>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <App />
         </AuthProvider>
       </QueryProvider>
     </ThemeProvider>
