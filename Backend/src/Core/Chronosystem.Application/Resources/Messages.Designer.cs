@@ -19,14 +19,9 @@ namespace Chronosystem.Application.Resources
     /// </remarks>
     public static class Messages
     {
-        // Nota: typeof(Messages).Assembly é mais robusto que GetExecutingAssembly()
-        // pois sempre resolve o assembly onde esta classe está definida.
         private static readonly ResourceManager resourceManager =
             new ResourceManager("Chronosystem.Application.Resources.Messages", typeof(Messages).Assembly);
 
-        /// <summary>
-        /// Retorna o valor localizado de uma chave de recurso.
-        /// </summary>
         public static string Get(string name) =>
             resourceManager.GetString(name, CultureInfo.CurrentUICulture) ?? $"[[{name}]]";
 
@@ -79,5 +74,9 @@ namespace Chronosystem.Application.Resources
         // =====================================================================
         public static string Auth_SignUp_Success => Get(nameof(Auth_SignUp_Success));
         public static string Auth_Refresh_InvalidOrExpired => Get(nameof(Auth_Refresh_InvalidOrExpired));
+
+        // ✅ Novas mensagens usadas no UserClaimsExtensions
+        public static string Auth_InvalidToken_UserNotInContext => Get(nameof(Auth_InvalidToken_UserNotInContext));
+        public static string Auth_InvalidToken_SubClaimMissingOrMalformed => Get(nameof(Auth_InvalidToken_SubClaimMissingOrMalformed));
     }
 }

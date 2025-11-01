@@ -106,4 +106,11 @@
   <data name="Auth_Refresh_InvalidOrExpired" xml:space="preserve">
     <value>The refresh token is invalid or has already expired.</value>
   </data>
+  <data name="Auth_InvalidToken_UserNotInContext" xml:space="preserve">
+    <value>Invalid token: user not found in context.</value>
+  </data>
+  <data name="Auth_InvalidToken_SubClaimMissingOrMalformed" xml:space="preserve">
+    <value>Invalid token: user identification claim is missing or malformed.</value>
+  </data>
 </root>
+

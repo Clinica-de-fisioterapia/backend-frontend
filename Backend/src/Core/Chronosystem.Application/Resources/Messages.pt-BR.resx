@@ -111,4 +111,14 @@
   <data name="Auth_Refresh_InvalidOrExpired" xml:space="preserve">
     <value>O refresh token é inválido ou já expirou.</value>
   </data>
+  <!-- ========================================= -->
+  <!-- 🔐 AUTH (novas chaves) -->
+  <!-- ========================================= -->
+  <data name="Auth_InvalidToken_UserNotInContext" xml:space="preserve">
+    <value>Token inválido: usuário não encontrado no contexto.</value>
+  </data>
+  <data name="Auth_InvalidToken_SubClaimMissingOrMalformed" xml:space="preserve">
+    <value>Token inválido: claim de identificação do usuário ausente ou malformada.</value>
+  </data>
 </root>
+
