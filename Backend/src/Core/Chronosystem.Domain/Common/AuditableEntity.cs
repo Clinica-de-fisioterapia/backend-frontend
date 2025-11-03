@@ -1,4 +1,3 @@
-using System;
 
 namespace Chronosystem.Domain.Common
 {
@@ -26,10 +25,13 @@ namespace Chronosystem.Domain.Common
             UpdatedBy = userId;
         }
 
-        public void SoftDelete(Guid? userId = null)
+        // <<< mudança: agora é virtual para permitir override nas entidades >>>
+        public virtual void SoftDelete(Guid? userId = null)
         {
             var now = DateTime.UtcNow;
-            DeletedAt = now; UpdatedAt = now; UpdatedBy = userId;
+            DeletedAt = now; 
+            UpdatedAt = now; 
+            UpdatedBy = userId;
         }
     }
 }
