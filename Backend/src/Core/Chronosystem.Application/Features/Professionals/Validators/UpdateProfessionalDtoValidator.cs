@@ -9,13 +9,11 @@ public sealed class UpdateProfessionalDtoValidator : AbstractValidator<UpdatePro
     public UpdateProfessionalDtoValidator()
     {
         RuleFor(x => x.RegistryCode)
-            .Transform(v => string.IsNullOrWhiteSpace(v) ? null : v.Trim())
-            .MaximumLength(100)
+            .Must(value => value is null || value.Trim().Length <= 100)
             .WithMessage(Messages.Professional_RegistryCode_MaxLength);
 
         RuleFor(x => x.Specialty)
-            .Transform(v => string.IsNullOrWhiteSpace(v) ? null : v.Trim())
-            .MaximumLength(150)
+            .Must(value => value is null || value.Trim().Length <= 150)
             .WithMessage(Messages.Professional_Specialty_MaxLength);
     }
 }
