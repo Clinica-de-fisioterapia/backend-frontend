@@ -15,16 +15,16 @@ namespace Chronosystem.Domain.Entities
 
         public static User Create(string fullName, string email, string passwordHash, string role)
         {
-            if (string.IsNullOrWhiteSpace(fullName))    throw new ArgumentException(nameof(fullName));
-            if (string.IsNullOrWhiteSpace(email))       throw new ArgumentException(nameof(email));
-            if (string.IsNullOrWhiteSpace(passwordHash))throw new ArgumentException(nameof(passwordHash));
-            if (string.IsNullOrWhiteSpace(role))        throw new ArgumentException(nameof(role));
+            if (string.IsNullOrWhiteSpace(fullName))     throw new ArgumentException(nameof(fullName));
+            if (string.IsNullOrWhiteSpace(email))        throw new ArgumentException(nameof(email));
+            if (string.IsNullOrWhiteSpace(passwordHash)) throw new ArgumentException(nameof(passwordHash));
+            if (string.IsNullOrWhiteSpace(role))         throw new ArgumentException(nameof(role));
 
             return new User
             {
-                Id = Guid.NewGuid(),                                    // ok: setter é protected (da base)
+                Id = Guid.NewGuid(),
                 FullName = fullName.Trim(),
-                Email = email.Trim(),                                   // citext trata case-insensitive
+                Email = email.Trim(),
                 PasswordHash = passwordHash,
                 Role = role.Trim().ToLowerInvariant(),
                 IsActive = true
@@ -36,6 +36,12 @@ namespace Chronosystem.Domain.Entities
         public void UpdatePassword(string hash) { if (!string.IsNullOrWhiteSpace(hash)) PasswordHash = hash; }
         public void UpdateRole(string v)        { if (!string.IsNullOrWhiteSpace(v)) Role = v.Trim().ToLowerInvariant(); }
         public void UpdateIsActive(bool v)      => IsActive = v;
-        public void SoftDelete(Guid? actorUserId = null) => base.SoftDelete(actorUserId);
+
+        // <<< mudança: agora é override, não oculta mais o método da base >>>
+        public override void SoftDelete(Guid? actorUserId = null)
+        {
+            // (Opcional) lógica específica de User (ex.: revogar tokens, invalidar cache)
+            base.SoftDelete(actorUserId);
+        }
     }
 }

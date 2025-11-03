@@ -2,7 +2,7 @@
 // ARQUIVO: UnitsController.cs
 // CAMADA: Interface / Controllers
 // OBJETIVO: Controlador REST responsável por gerenciar Unidades (Units).
-//            Aplica CQRS com MediatR, validações multilíngues e autorização por papéis.
+//            Agora TODOS os endpoints exigem papel "admin".
 // ======================================================================================
 
 using Chronosystem.Api.Extensions;
@@ -20,6 +20,7 @@ namespace Chronosystem.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "admin")] // <- TODAS as ações exigem admin
 public class UnitsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -34,7 +35,6 @@ public class UnitsController : ControllerBase
     // -------------------------------------------------------------------------
     /// <summary>Cria uma nova unidade (restrito a administradores).</summary>
     [HttpPost]
-    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Create([FromBody] CreateUnitDto dto, CancellationToken cancellationToken)
     {
         if (dto is null)
@@ -78,7 +78,6 @@ public class UnitsController : ControllerBase
     // -------------------------------------------------------------------------
     /// <summary>Atualiza uma unidade existente.</summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUnitDto dto, CancellationToken cancellationToken)
     {
         if (dto is null)
@@ -96,13 +95,11 @@ public class UnitsController : ControllerBase
         return Ok(updated);
     }
 
-
     // -------------------------------------------------------------------------
     // DELETE /api/units/{id}
     // -------------------------------------------------------------------------
     /// <summary>Realiza exclusão lógica (soft delete) de uma unidade.</summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var actorId = User.GetActorUserIdOrThrow();
