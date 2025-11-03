@@ -54,6 +54,31 @@
   </data>
 
   <!-- ========================================= -->
+  <!-- Professionals Module -->
+  <!-- ========================================= -->
+  <data name="Professional_User_NotFound" xml:space="preserve">
+    <value>User not found for the provided identifier.</value>
+  </data>
+  <data name="Professional_User_InvalidRole" xml:space="preserve">
+    <value>The user must have the professional role.</value>
+  </data>
+  <data name="Professional_User_AlreadyLinked" xml:space="preserve">
+    <value>A professional is already linked to this user.</value>
+  </data>
+  <data name="Professional_RegistryCode_AlreadyExists" xml:space="preserve">
+    <value>A professional with this registry code already exists.</value>
+  </data>
+  <data name="Professional_NotFound" xml:space="preserve">
+    <value>Professional not found.</value>
+  </data>
+  <data name="Professional_RegistryCode_MaxLength" xml:space="preserve">
+    <value>The registry code must have at most 100 characters.</value>
+  </data>
+  <data name="Professional_Specialty_MaxLength" xml:space="preserve">
+    <value>The specialty must have at most 150 characters.</value>
+  </data>
+
+  <!-- ========================================= -->
   <!-- Users Module -->
   <!-- ========================================= -->
   <data name="User_Email_AlreadyExists" xml:space="preserve">

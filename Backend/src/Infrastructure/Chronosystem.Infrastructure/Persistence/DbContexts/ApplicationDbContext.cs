@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Unit> Units => Set<Unit>();
+    public DbSet<Professional> Professionals => Set<Professional>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken)
@@ -28,6 +29,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfiguration(new UnitConfiguration());
+        modelBuilder.ApplyConfiguration(new ProfessionalConfiguration());
 
         // ===== User =====
         modelBuilder.Entity<User>(entity =>

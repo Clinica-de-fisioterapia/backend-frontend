@@ -57,6 +57,31 @@
   </data>
 
   <!-- ========================================= -->
+  <!-- Módulo de Profissionais -->
+  <!-- ========================================= -->
+  <data name="Professional_User_NotFound" xml:space="preserve">
+    <value>Usuário não encontrado para o identificador informado.</value>
+  </data>
+  <data name="Professional_User_InvalidRole" xml:space="preserve">
+    <value>O usuário deve possuir o papel de profissional.</value>
+  </data>
+  <data name="Professional_User_AlreadyLinked" xml:space="preserve">
+    <value>Já existe um profissional vinculado a este usuário.</value>
+  </data>
+  <data name="Professional_RegistryCode_AlreadyExists" xml:space="preserve">
+    <value>Já existe um profissional com este código de registro.</value>
+  </data>
+  <data name="Professional_NotFound" xml:space="preserve">
+    <value>Profissional não encontrado.</value>
+  </data>
+  <data name="Professional_RegistryCode_MaxLength" xml:space="preserve">
+    <value>O código de registro deve ter no máximo 100 caracteres.</value>
+  </data>
+  <data name="Professional_Specialty_MaxLength" xml:space="preserve">
+    <value>A especialidade deve ter no máximo 150 caracteres.</value>
+  </data>
+
+  <!-- ========================================= -->
   <!-- Módulo de Usuários -->
   <!-- ========================================= -->
   <data name="User_Email_AlreadyExists" xml:space="preserve">

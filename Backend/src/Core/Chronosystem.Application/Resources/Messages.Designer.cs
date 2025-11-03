@@ -48,6 +48,17 @@ namespace Chronosystem.Application.Resources
         public static string Unit_List_Empty => Get(nameof(Unit_List_Empty));
 
         // =====================================================================
+        // 👩‍⚕️ PROFESSIONALS
+        // =====================================================================
+        public static string Professional_User_NotFound => Get(nameof(Professional_User_NotFound));
+        public static string Professional_User_InvalidRole => Get(nameof(Professional_User_InvalidRole));
+        public static string Professional_User_AlreadyLinked => Get(nameof(Professional_User_AlreadyLinked));
+        public static string Professional_RegistryCode_AlreadyExists => Get(nameof(Professional_RegistryCode_AlreadyExists));
+        public static string Professional_NotFound => Get(nameof(Professional_NotFound));
+        public static string Professional_RegistryCode_MaxLength => Get(nameof(Professional_RegistryCode_MaxLength));
+        public static string Professional_Specialty_MaxLength => Get(nameof(Professional_Specialty_MaxLength));
+
+        // =====================================================================
         // 👤 USERS
         // =====================================================================
         public static string User_Email_AlreadyExists => Get(nameof(User_Email_AlreadyExists));

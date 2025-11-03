@@ -145,6 +145,7 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
 
 // --- Repositórios e Unidade de Trabalho ---
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
+builder.Services.AddScoped<IProfessionalRepository, ProfessionalRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
 builder.Services.AddScoped<ITenantCatalogReader, TenantCatalogReader>();
