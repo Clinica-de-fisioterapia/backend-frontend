@@ -91,9 +91,6 @@ public class UsersController : ControllerBase
         if (dto is null)
             return BadRequest(Messages.Validation_Request_Invalid);
 
-        if (dto.Id != Guid.Empty && dto.Id != id)
-            return BadRequest(Messages.Validation_Id_Mismatch);
-
         var actorId = User.GetActorUserIdOrThrow();
 
         var command = new UpdateUserCommand(

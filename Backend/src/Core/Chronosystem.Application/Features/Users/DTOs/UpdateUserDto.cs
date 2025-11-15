@@ -4,8 +4,6 @@
 // OBJETIVO: Representa os dados de entrada para atualização de um usuário existente.
 // ======================================================================================
 
-using System;
-
 namespace Chronosystem.Application.Features.Users.DTOs;
 
 /// <summary>
@@ -13,11 +11,6 @@ namespace Chronosystem.Application.Features.Users.DTOs;
 /// </summary>
 public sealed class UpdateUserDto
 {
-    /// <summary>
-    /// Identificador do usuário.
-    /// </summary>
-    public Guid Id { get; init; }
-
     /// <summary>
     /// Nome completo atualizado.
     /// </summary>
