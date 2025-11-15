@@ -29,7 +29,7 @@ public sealed class PlanQuotaService : IPlanQuotaService
         }
 
         var maxUsers = ParseQuota(_tenantSettingsProvider.GetValue(normalizedTenant, "max_users"));
-        var maxUnits = ParseQuota(_tenantSettingsProvider.GetValue(normalizedTenant, "max_units"));
+        var maxUnits = GetPlanMaxUnits(normalizedTenant);
         var horizon = ParsePositiveInt(_tenantSettingsProvider.GetValue(normalizedTenant, "availability_horizon_days"))
             ?? int.MaxValue;
 
@@ -112,6 +112,37 @@ public sealed class PlanQuotaService : IPlanQuotaService
         }
 
         return parsed <= 0 ? null : parsed;
+    }
+
+    private int? GetPlanMaxUnits(string tenant)
+    {
+        try
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT p.max_professionals
+                FROM public.tenants t
+                JOIN public.plans p ON p.code = t.plan_code
+                WHERE t.deleted_at IS NULL AND LOWER(t.slug) = LOWER(@slug)
+                LIMIT 1;";
+            command.Parameters.AddWithValue("slug", tenant);
+
+            var result = command.ExecuteScalar();
+            if (result is null || result is DBNull)
+            {
+                return null;
+            }
+
+            var parsed = Convert.ToInt32(result, CultureInfo.InvariantCulture);
+            return parsed < 0 ? null : parsed;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
 }
