@@ -125,8 +125,8 @@ public sealed class PlanQuotaService : IPlanQuotaService
             command.CommandText = @"
                 SELECT p.max_professionals
                 FROM public.tenants t
-                JOIN public.plans p ON p.code = t.plan_code
-                WHERE t.deleted_at IS NULL AND LOWER(t.slug) = LOWER(@slug)
+                JOIN public.plans p ON p.id = t.plan_id
+                WHERE t.deleted_at IS NULL AND LOWER(t.subdomain) = LOWER(@slug)
                 LIMIT 1;";
             command.Parameters.AddWithValue("slug", tenant);
 
