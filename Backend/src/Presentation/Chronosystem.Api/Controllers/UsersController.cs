@@ -86,7 +86,7 @@ public class UsersController : ControllerBase
     /// Atualiza o perfil do usuário autenticado.
     /// </summary>
     /// <remarks>Identificação vem do token JWT; não envie id/role/isActive/password.</remarks>
-    [HttpPut("me")]
+    [HttpPut]
     [Authorize]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
