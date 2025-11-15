@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace Chronosystem.Application.Common.Behaviors;
 
 public sealed class AvailabilityHorizonValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
 {
     private static readonly ConcurrentDictionary<Type, PropertyInfo?> _datePropCache = new();
     private static readonly string[] CandidatePropertyNames =
