@@ -121,15 +121,13 @@ public sealed class PlanQuotaService : IPlanQuotaService
             using var connection = new NpgsqlConnection(_connectionString);
             connection.Open();
 
-            const string sql = @"
-                SELECT p.max_professionals
-                FROM public.tenants t
-                JOIN public.plans p ON p.id = t.plan_id
-                WHERE t.deleted_at IS NULL AND LOWER(t.subdomain) = LOWER(@slug)
-                LIMIT 1;";
-
             using var command = connection.CreateCommand();
-            command.CommandText = sql;
+            command.CommandText = @"
+                SELECT p.max_professionals
+                  FROM public.tenants t
+                  JOIN public.plans p ON p.id = t.plan_id
+                 WHERE t.deleted_at IS NULL AND LOWER(t.subdomain) = LOWER(@slug)
+                 LIMIT 1;";
             command.Parameters.AddWithValue("slug", tenant);
 
             var result = command.ExecuteScalar();
