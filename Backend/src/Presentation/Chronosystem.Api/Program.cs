@@ -11,11 +11,17 @@ using Chronosystem.Application.Common.Behaviors; // ValidationBehavior
 using Chronosystem.Application; // AssemblyMarker
 using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Application.Common.Interfaces.Tenancy;
+using Chronosystem.Application.Resources;
+using Chronosystem.Infrastructure.Caching;
 using Chronosystem.Infrastructure.Persistence.DbContexts;
 using Chronosystem.Infrastructure.Persistence.Repositories;
+using Chronosystem.Infrastructure.Tenancy;
+using Chronosystem.Infrastructure.Tenancy.Plans;
+using Chronosystem.Infrastructure.Tenancy.Settings;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -29,11 +35,11 @@ using Chronosystem.Infrastructure.Configuration;           // AuthenticationSetu
 using Chronosystem.Infrastructure.Middleware;             // TenantValidationMiddleware
 using Microsoft.Extensions.Configuration;                 // IConfiguration
 using Microsoft.AspNetCore.Http;                          // IHttpContextAccessor
-using Chronosystem.Infrastructure.Tenancy;                // TenantProvisioningService
 using Microsoft.AspNetCore.Authorization;                 // Authorization options
 using Chronosystem.Infrastructure.Security.Permissions;   // Permission policies
 using Npgsql;
-using System.IdentityModel.Tokens.Jwt;                    
+using System.IdentityModel.Tokens.Jwt;
+using System.Threading.RateLimiting;
 
 Npgsql.NpgsqlConnection.ClearAllPools();
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +62,7 @@ builder.Services.AddControllers()
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 
 // --- Configuração do Swagger ---
 builder.Services.AddSwaggerGen(options =>
@@ -149,6 +156,11 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
 builder.Services.AddScoped<ITenantCatalogReader, TenantCatalogReader>();
 builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
+builder.Services.AddSingleton<ITenantSettingsProvider, TenantSettingsProvider>();
+builder.Services.AddScoped<IPlanQuotaService, PlanQuotaService>();
+builder.Services.AddSingleton<IAvailabilityTtlProvider, AvailabilityTtlProvider>();
+builder.Services.AddSingleton<ITenantTimezoneProvider, TenantTimezoneProvider>();
+builder.Services.AddScoped<ICurrentTenantProvider, HttpContextTenantProvider>();
 
 // --- FluentValidation ---
 builder.Services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly);
@@ -156,6 +168,7 @@ builder.Services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly);
 // --- MediatR ---
 builder.Services.AddMediatR(typeof(AssemblyMarker).Assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AvailabilityHorizonValidationBehavior<,>));
 
 // >>> REGISTRO JWT + REFRESH <<<
 builder.Services.AddJwtAuthentication(builder.Configuration);            // Issuer/Audience/Key/Validate
@@ -168,6 +181,59 @@ builder.Services.AddAuthorization(options =>
     // Role-based simples (string), mantendo extensibilidade (sem enum fixo)
     options.AddPolicy("RequireAdmin", policy => policy.RequireRole("admin"));
     options.AddPermissionPolicy("Permission:ManageUsers", "manage:users");
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds)
+                .ToString(CultureInfo.InvariantCulture);
+        }
+
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { error = Messages.TooManyRequests_Message },
+            cancellationToken: token);
+    };
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        var tenantHeader = httpContext.Request.Headers["X-Tenant"].ToString();
+        var normalizedTenant = string.IsNullOrWhiteSpace(tenantHeader)
+            ? null
+            : tenantHeader.Trim().ToLowerInvariant();
+
+        var settingsProvider = httpContext.RequestServices.GetRequiredService<ITenantSettingsProvider>();
+        var loggerFactory = httpContext.RequestServices.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger("TenantRateLimiter");
+
+        var limits = ResolveRateLimits(normalizedTenant, settingsProvider);
+
+        return RateLimitPartition.GetTokenBucketLimiter(normalizedTenant ?? "anonymous", key =>
+        {
+            logger.LogDebug(
+                "Configured rate limiter partition {tenant} rps={rps} burst={burst} queue={queue}",
+                key,
+                limits.Rps,
+                limits.Burst,
+                limits.Queue);
+
+            return new TokenBucketRateLimiterOptions
+            {
+                TokenLimit = limits.Burst,
+                TokensPerPeriod = limits.Rps,
+                ReplenishmentPeriod = TimeSpan.FromSeconds(1),
+                AutoReplenishment = true,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = limits.Queue
+            };
+        });
+    });
 });
 
 // =================================================================================
@@ -213,6 +279,9 @@ if (app.Environment.IsDevelopment())
 // Resolve tenant do header (seu middleware atual)
 app.UseMiddleware<TenantResolverMiddleware>();
 
+// Limita requisições por tenant antes de autenticar (opcional recomendado)
+app.UseRateLimiter();
+
 // >>> AUTENTICAÇÃO / VALIDAÇÃO DE TENANT / AUTORIZAÇÃO (ordem importante) <<<
 app.UseAuthentication();
 app.UseMiddleware<TenantValidationMiddleware>(); // compara X-Tenant com claim 'tenant' do JWT
@@ -237,3 +306,26 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 app.Run();
+
+static (int Rps, int Burst, int Queue) ResolveRateLimits(string? tenant, ITenantSettingsProvider settingsProvider)
+{
+    const int defaultRps = 10;
+    const int defaultBurst = 20;
+    const int defaultQueue = 50;
+
+    if (string.IsNullOrWhiteSpace(tenant))
+    {
+        return (defaultRps, defaultBurst, defaultQueue);
+    }
+
+    var rps = ParsePositiveInt(settingsProvider.GetValue(tenant, "rate_limit_rps"), defaultRps);
+    var burst = ParsePositiveInt(settingsProvider.GetValue(tenant, "rate_limit_burst"), defaultBurst);
+    var queue = ParsePositiveInt(settingsProvider.GetValue(tenant, "rate_limit_queue"), defaultQueue);
+
+    return (rps, burst, queue);
+}
+
+static int ParsePositiveInt(string? value, int fallback)
+    => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) && parsed > 0
+        ? parsed
+        : fallback;

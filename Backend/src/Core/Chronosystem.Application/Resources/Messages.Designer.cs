@@ -34,6 +34,7 @@ namespace Chronosystem.Application.Resources
         public static string Validation_InvalidFormat => Get(nameof(Validation_InvalidFormat));
         public static string Validation_UserId_Required => Get(nameof(Validation_UserId_Required));
         public static string Validation_Id_Mismatch => Get(nameof(Validation_Id_Mismatch));
+        // Default error used when a request validation fails unexpectedly.
         public static string Validation_Request_Invalid => Get(nameof(Validation_Request_Invalid));
 
         // =====================================================================
@@ -78,5 +79,13 @@ namespace Chronosystem.Application.Resources
         // ✅ Novas mensagens usadas no UserClaimsExtensions
         public static string Auth_InvalidToken_UserNotInContext => Get(nameof(Auth_InvalidToken_UserNotInContext));
         public static string Auth_InvalidToken_SubClaimMissingOrMalformed => Get(nameof(Auth_InvalidToken_SubClaimMissingOrMalformed));
+
+        // =====================================================================
+        // 📊 PLAN LIMITS & RATE LIMITING
+        // =====================================================================
+        public static string Plan_MaxUsers_Reached => Get(nameof(Plan_MaxUsers_Reached));
+        public static string Plan_MaxUnits_Reached => Get(nameof(Plan_MaxUnits_Reached));
+        public static string Plan_Horizon_Exceeded => Get(nameof(Plan_Horizon_Exceeded));
+        public static string TooManyRequests_Message => Get(nameof(TooManyRequests_Message));
     }
 }

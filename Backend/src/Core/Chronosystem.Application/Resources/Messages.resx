@@ -31,7 +31,7 @@
     <value>The ID provided in the route does not match the ID in the request body.</value>
   </data>
   <data name="Validation_Request_Invalid" xml:space="preserve">
-    <value>The request object is invalid or empty.</value>
+    <value>An unexpected request validation error occurred.</value>
   </data>
 
   <!-- ========================================= -->
@@ -111,6 +111,21 @@
   </data>
   <data name="Auth_InvalidToken_SubClaimMissingOrMalformed" xml:space="preserve">
     <value>Invalid token: user identification claim is missing or malformed.</value>
+  </data>
+  <!-- ========================================= -->
+  <!-- Plan & Rate Limiting Messages -->
+  <!-- ========================================= -->
+  <data name="Plan_MaxUsers_Reached" xml:space="preserve">
+    <value>Your plan allows up to {0} active users.</value>
+  </data>
+  <data name="Plan_MaxUnits_Reached" xml:space="preserve">
+    <value>Your plan allows up to {0} units.</value>
+  </data>
+  <data name="Plan_Horizon_Exceeded" xml:space="preserve">
+    <value>The schedule is available until {0} under your plan.</value>
+  </data>
+  <data name="TooManyRequests_Message" xml:space="preserve">
+    <value>Too many requests. Please try again shortly.</value>
   </data>
 </root>
 

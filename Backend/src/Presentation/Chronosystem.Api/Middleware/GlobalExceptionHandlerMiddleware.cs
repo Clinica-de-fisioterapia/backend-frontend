@@ -1,4 +1,9 @@
+using Chronosystem.Application.Common.Exceptions;
+using Chronosystem.Application.Resources;
+using Chronosystem.Infrastructure.Tenancy.Exceptions;
 using FluentValidation;
+using Microsoft.Extensions.Hosting;
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 
@@ -32,28 +37,41 @@ public class GlobalExceptionHandlerMiddleware
         HttpStatusCode statusCode;
         object? response;
 
-        // Verifica se a exceção é do tipo ValidationException do FluentValidation
-        if (exception is ValidationException validationException)
+        switch (exception)
         {
-            statusCode = HttpStatusCode.BadRequest; // 400
-            // Formata os erros de validação em um objeto mais amigável
-            response = validationException.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(
-                    g => char.ToLowerInvariant(g.Key[0]) + g.Key.Substring(1), // camelCase
-                    g => g.Select(e => e.ErrorMessage).ToArray()
-                );
-        }
-        else
-        {
-            // Para qualquer outra exceção não tratada, retorna um erro 500 genérico
-            statusCode = HttpStatusCode.InternalServerError; // 500
-            response = new { error = "An unexpected error occurred.", details = exception.Message };
+            case TenantHeaderMissingException:
+                statusCode = HttpStatusCode.BadRequest;
+                response = new { error = Messages.Tenant_Header_Required };
+                break;
+            case ValidationException validationException:
+                statusCode = HttpStatusCode.BadRequest;
+                response = validationException.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(
+                        g => char.ToLowerInvariant(g.Key[0]) + g.Key.Substring(1),
+                        g => g.Select(e => e.ErrorMessage).ToArray());
+                break;
+            case BusinessRuleException businessRuleException:
+                statusCode = HttpStatusCode.UnprocessableEntity;
+                response = new { error = businessRuleException.Message };
+                break;
+            default:
+            {
+                var env = context.RequestServices.GetService<IHostEnvironment>();
+                var isDev = env?.IsDevelopment() ?? false;
+
+                statusCode = HttpStatusCode.InternalServerError;
+                response = isDev
+                    ? new { error = Messages.Validation_Request_Invalid, details = exception.Message }
+                    : new { error = Messages.Validation_Request_Invalid };
+
+                break;
+            }
         }
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
-        
+
         return context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }
