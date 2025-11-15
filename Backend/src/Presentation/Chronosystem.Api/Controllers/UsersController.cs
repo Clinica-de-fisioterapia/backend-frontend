@@ -7,7 +7,6 @@
 using Chronosystem.Api.Extensions;
 using Chronosystem.Application.Features.Users.Commands.CreateUser;
 using Chronosystem.Application.Features.Users.Commands.DeleteUserCommand;
-using Chronosystem.Application.Features.Users.Commands.UpdateMyProfile;
 using Chronosystem.Application.Features.Users.Commands.UpdateUserCommand;
 using Chronosystem.Application.Features.Users.Queries.GetAllUsers;
 using Chronosystem.Application.Features.Users.Queries.GetUserById;
@@ -81,33 +80,6 @@ public class UsersController : ControllerBase
         var user = await _mediator.Send(new GetUserByIdQuery(id));
         return user is null ? NotFound(Messages.User_NotFound) : Ok(user);
     }
-
-    /// <summary>
-    /// Atualiza o perfil do usuário autenticado.
-    /// </summary>
-    /// <remarks>Identificação vem do token JWT; não envie id/role/isActive/password.</remarks>
-    [HttpPut]
-    [Authorize]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<UserDto>> UpdateMyProfile([FromBody] UpdateMyProfileRequest request, CancellationToken ct)
-    {
-        if (request is null)
-            return BadRequest(Messages.Validation_Request_Invalid);
-
-        var actorUserId = User.GetActorUserIdOrThrow();
-
-        var command = new UpdateMyProfileCommand
-        {
-            ActorUserId = actorUserId,
-            FullName = request.FullName,
-            Email = request.Email
-        };
-
-        var result = await _mediator.Send(command, ct);
-        return Ok(result);
-    }
-
 
     // -------------------------------------------------------------------------
     // ✏️ PUT /api/users/{id}
