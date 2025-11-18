@@ -5,7 +5,7 @@
       "includePath": [
         "${workspaceFolder}/**"
       ],
-      "compilerPath": "gcc",
+      // Removed "compilerPath" because "gcc" could not be found; set this to the full path to your GCC installation if you have one, e.g. "C:/msys64/mingw64/bin/gcc.exe"
       "cStandard": "${default}",
       "cppStandard": "${default}",
       "intelliSenseMode": "windows-gcc-x64",
