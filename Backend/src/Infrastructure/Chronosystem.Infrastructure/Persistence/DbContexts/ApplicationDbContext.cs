@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<User> Users => Set<User>();
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Service> Services => Set<Service>();
 
     Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken)
         => base.SaveChangesAsync(cancellationToken);
@@ -93,6 +94,32 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
                   .HasForeignKey(rt => rt.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<Service>(entity =>
+            {
+                entity.ToTable("services");
+                entity.HasKey(s => s.Id);
+
+                entity.Property(s => s.Name).HasMaxLength(255).IsRequired();
+                
+                // Configuração de precisão para o preço (MUITO IMPORTANTE)
+                entity.Property(s => s.Price).HasPrecision(10, 2).IsRequired();
+                
+                entity.Property(s => s.DurationMinutes).IsRequired();
+
+                // ✅ AQUI ESTÁ A CORREÇÃO PARA O ERRO "row_version1"
+                // Mapeamos explicitamente a propriedade C# RowVersion para a coluna SQL "row_version"
+                entity.Property(s => s.RowVersion)
+                        .HasColumnName("row_version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate();
+
+                // Mapeamento explícito dos campos de auditoria específicos desta tabela
+                entity.Property(s => s.CreatedBy).HasColumnName("created_by");
+                entity.Property(s => s.UpdatedBy).HasColumnName("updated_by");
+
+                entity.HasQueryFilter(s => s.DeletedAt == null);
+            });
 
         // ===== Bloco global de auditoria (para quem herda de AuditableEntity) =====
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
