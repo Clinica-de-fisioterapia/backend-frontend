@@ -4,7 +4,18 @@ namespace Chronosystem.Domain.Entities
 {
     public class Person
     {
-        public Guid Id { get; set; }
+    private Guid actorUserId;
+
+    public Person(string fullName, string? cpf, string? phone, string? email, Guid actorUserId)
+    {
+      FullName = fullName;
+      Cpf = cpf;
+      Phone = phone;
+      Email = email;
+      this.actorUserId = actorUserId;
+    }
+
+    public Guid Id { get; set; }
         public string FullName { get; set; } = default!;
         public string? Cpf { get; set; }
         public string? Phone { get; set; }
