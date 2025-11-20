@@ -12,6 +12,7 @@ namespace Chronosystem.Application.Common.Interfaces.Persistence
         Task<IEnumerable<Person>> GetAllAsync(CancellationToken cancellationToken = default);
         Task<Person?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         void Update(Person person);
+        Task<bool> ExistsByEmailAsync(string? email);
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
         Task<bool> ExistsByCpfAsync(string? cpf);
         Task<bool> ExistsByCpfExceptIdAsync(string cpf, Guid idToIgnore);

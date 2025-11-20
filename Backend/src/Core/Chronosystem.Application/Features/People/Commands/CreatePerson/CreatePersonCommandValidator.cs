@@ -1,30 +1,44 @@
 using FluentValidation;
+using Chronosystem.Application.Common.Interfaces.Persistence;
 
 namespace Chronosystem.Application.Features.People.Commands.CreatePerson
 {
-    public class CreatePersonCommandValidator : AbstractValidator<CreatePersonCommand>
+     public class CreatePersonCommandValidator : AbstractValidator<CreatePersonCommand>
     {
-        public CreatePersonCommandValidator()
+        public CreatePersonCommandValidator(IPersonRepository repository)
         {
             RuleFor(x => x.FullName)
                 .NotEmpty().WithMessage("FullName is required")
                 .MaximumLength(250);
 
+            // CPF ============================
             When(x => !string.IsNullOrWhiteSpace(x.Cpf), () =>
             {
                 RuleFor(x => x.Cpf)
                     .Must(CpfHelpers.IsValidCpf).WithMessage("CPF inválido")
                     .MaximumLength(20);
+
+                RuleFor(x => x.Cpf)
+                    .MustAsync(async (cpf, _) => !await repository.ExistsByCpfAsync(cpf))
+                    .WithMessage("CPF já cadastrado.");
             });
 
+            // EMAIL ============================
             When(x => !string.IsNullOrWhiteSpace(x.Email), () =>
             {
-                RuleFor(x => x.Email).EmailAddress().WithMessage("E-mail inválido");
+                RuleFor(x => x.Email)
+                    .EmailAddress().WithMessage("E-mail inválido");
+
+                RuleFor(x => x.Email)
+                    .MustAsync(async (email, _) => !await repository.ExistsByEmailAsync(email))
+                    .WithMessage("E-mail já cadastrado.");
             });
 
+            // PHONE ============================
             When(x => !string.IsNullOrWhiteSpace(x.Phone), () =>
             {
-                RuleFor(x => x.Phone).MaximumLength(50);
+                RuleFor(x => x.Phone)
+                    .MaximumLength(50);
             });
         }
     }
