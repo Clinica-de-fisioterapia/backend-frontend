@@ -2,97 +2,86 @@ using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Domain.Entities;
 using Chronosystem.Infrastructure.Persistence.DbContexts;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Chronosystem.Infrastructure.Persistence.Repositories
+public class PersonRepository : IPersonRepository
 {
-    public class PersonRepository : IPersonRepository
+    private readonly ApplicationDbContext _context;
+
+    public PersonRepository(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+    }
 
-        public PersonRepository(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+    public async Task AddAsync(Person person)
+    {
+        await _context.People.AddAsync(person);
+    }
 
-        public async Task AddAsync(Person person)
-        {
-            await _context.People.AddAsync(person);
-        }
+    public Task UpdateAsync(Person person)
+    {
+        _context.People.Update(person);
+        return Task.CompletedTask;
+    }
 
-        public Task UpdateAsync(Person person)
-        {
-            _context.People.Update(person);
-            return Task.CompletedTask;
-        }
+    public Task DeleteAsync(Person person)
+    {
+        _context.People.Remove(person);
+        return Task.CompletedTask;
+    }
 
-        public Task DeleteAsync(Person person)
-        {
-            _context.People.Remove(person);
-            return Task.CompletedTask;
-        }
+    public async Task<Person?> GetByIdAsync(Guid id)
+    {
+        return await _context.People
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt == null);
+    }
 
-        public async Task<Person?> GetByIdAsync(Guid id)
-        {
-            return await _context.People.FirstOrDefaultAsync(p => p.Id == id);
-        }
+    public async Task<List<Person>> GetAllAsync()
+    {
+        return await _context.People
+            .Where(p => p.DeletedAt == null)
+            .ToListAsync();
+    }
 
-        public async Task<List<Person>> GetAllAsync()
-        {
-            return await _context.People.ToListAsync();
-        }
+    public async Task<bool> ExistsByCpfAsync(string? cpf)
+    {
+        if (string.IsNullOrWhiteSpace(cpf))
+            return false;
 
+        return await _context.People.AnyAsync(p => p.Cpf == cpf);
+    }
 
-        // ==========================================================
-        //   CPF DUPLICADO — CREATE
-        //   Agora aceita string? e evita comparar null x null
-        // ==========================================================
-        public async Task<bool> ExistsByCpfAsync(string? cpf)
-        {
-            if (string.IsNullOrWhiteSpace(cpf))
-                return false;
+    public async Task<bool> ExistsByCpfExceptIdAsync(string? cpf, Guid idToIgnore)
+    {
+        if (string.IsNullOrWhiteSpace(cpf))
+            return false;
 
-            return await _context.People.AnyAsync(p => p.Cpf == cpf);
-        }
+        return await _context.People.AnyAsync(p => p.Cpf == cpf && p.Id != idToIgnore);
+    }
 
+    // =============================
+    // Métodos obrigatórios da interface
+    // =============================
 
-        // ==========================================================
-        //   CPF DUPLICADO — UPDATE (ignorando o próprio ID)
-        // ==========================================================
-        public async Task<bool> ExistsByCpfExceptIdAsync(string? cpf, Guid idToIgnore)
-        {
-            if (string.IsNullOrWhiteSpace(cpf))
-                return false;
+    public async Task<IEnumerable<Person>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.People
+            .Where(p => p.DeletedAt == null)
+            .ToListAsync(cancellationToken);
+    }
 
-            return await _context.People.AnyAsync(p => p.Cpf == cpf && p.Id != idToIgnore);
-        }
+    public async Task<Person?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.People
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt == null, cancellationToken);
+    }
 
+    public void Update(Person person)
+    {
+        _context.People.Update(person);
+    }
 
-        // ==========================================================
-        //   Métodos não utilizados (se realmente não usar, remova)
-        // ==========================================================
-        public Task<IEnumerable<Person>> GetAllAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Person?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Update(Person person)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.SaveChangesAsync(cancellationToken);
     }
 }
