@@ -8,6 +8,5 @@ namespace Chronosystem.Application.Features.People.DTOs
         public string? Cpf { get; set; }
         public string? Phone { get; set; }
         public string? Email { get; set; }
-        public long RowVersion { get; set; } // para controle otimista se usar
     }
 }
