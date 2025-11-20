@@ -19,8 +19,8 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<User> Users => Set<User>();
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Person> People { get; set; } = default!;
     public DbSet<Service> Services => Set<Service>();
-
     Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken)
         => base.SaveChangesAsync(cancellationToken);
 
@@ -58,6 +58,50 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
             entity.HasQueryFilter(u => u.DeletedAt == null);
         });
+
+        // ===== Person =====
+        modelBuilder.Entity<Person>(entity =>
+        {
+            entity.ToTable("people");
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.FullName)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(p => p.Cpf)
+                .HasMaxLength(11);
+
+
+            entity.HasIndex(p => p.Cpf)
+                .IsUnique()
+                .HasFilter("cpf IS NOT NULL");
+
+            entity.Property(p => p.Email)
+                .HasMaxLength(255)
+                .HasColumnType("citext");
+
+            entity.HasIndex(p => p.Email)
+                .IsUnique()
+                .HasFilter("email IS NOT NULL");
+
+            entity.Property(p => p.Phone)
+                .HasMaxLength(20);
+
+            entity.Property(p => p.CreatedBy)
+                .HasColumnName("created_by");
+
+            entity.Property(p => p.UpdatedBy)
+                .HasColumnName("updated_by");
+
+            entity.Property(p => p.RowVersion)
+                .HasColumnName("row_version")
+                .IsConcurrencyToken()
+                .ValueGeneratedOnAddOrUpdate();
+
+            entity.HasQueryFilter(p => p.DeletedAt == null);
+        });
+
 
         // ===== RefreshToken =====
         modelBuilder.Entity<RefreshToken>().Ignore(rt => rt.CreatedBy);
@@ -147,5 +191,6 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
             updated.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
             updated.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
         }
+
     }
 }
