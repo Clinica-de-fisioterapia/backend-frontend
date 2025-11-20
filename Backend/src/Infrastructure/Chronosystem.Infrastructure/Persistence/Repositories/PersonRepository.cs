@@ -57,6 +57,14 @@ public class PersonRepository : IPersonRepository
 
         return await _context.People.AnyAsync(p => p.Cpf == cpf && p.Id != idToIgnore);
     }
+    public async Task<bool> ExistsByEmailAsync(string? email)
+{
+    if (string.IsNullOrWhiteSpace(email))
+        return false;
+
+    return await _context.People.AnyAsync(p => p.Email == email);
+}
+
 
     // =============================
     // Métodos obrigatórios da interface
