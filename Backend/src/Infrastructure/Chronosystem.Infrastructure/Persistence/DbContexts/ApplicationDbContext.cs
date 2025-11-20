@@ -21,6 +21,8 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Person> People { get; set; } = default!;
     public DbSet<Service> Services => Set<Service>();
+    public DbSet<Customer> Customers => Set<Customer>();
+
     Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken)
         => base.SaveChangesAsync(cancellationToken);
 
@@ -100,6 +102,34 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
                 .ValueGeneratedOnAddOrUpdate();
 
             entity.HasQueryFilter(p => p.DeletedAt == null);
+        });
+
+        // ===== Customer =====
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.ToTable("customers");
+            entity.HasKey(c => c.Id);
+
+            entity.Property(c => c.PersonId)
+                .IsRequired();
+
+            entity.HasOne(c => c.Person)
+                .WithOne()
+                .HasForeignKey<Customer>(c => c.PersonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(c => c.RowVersion)
+                .HasColumnName("row_version")
+                .IsConcurrencyToken()
+                .ValueGeneratedOnAddOrUpdate();
+
+            entity.Property(c => c.CreatedBy)
+                .HasColumnName("created_by");
+
+            entity.Property(c => c.UpdatedBy)
+                .HasColumnName("updated_by");
+
+            entity.HasQueryFilter(c => c.DeletedAt == null);
         });
 
 

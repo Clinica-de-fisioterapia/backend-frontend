@@ -57,25 +57,16 @@ namespace Chronosystem.Api.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePersonDto dto)
         {
-            if (dto.Id != Guid.Empty && dto.Id != id)
-                return BadRequest(Messages.Validation_Id_Mismatch);
+        var command = new UpdatePersonCommand(
+            id,
+            dto.FullName,
+            dto.Cpf,
+            dto.Phone,
+            dto.Email
+    );
 
-            var actorId = User.GetActorUserIdOrThrow();
-
-            var command = new UpdatePersonCommand(
-                id,
-                dto.FullName,
-                dto.Cpf,
-                dto.Phone,
-                dto.Email
-            )
-            {
-                ActorUserId = actorId
-            };
-
-            await _mediator.Send(command);
-
-            return NoContent();
+        await _mediator.Send(command);
+        return Ok();
         }
 
         [HttpDelete("{id:guid}")]

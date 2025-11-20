@@ -9,8 +9,5 @@ namespace Chronosystem.Application.Features.People.Commands.UpdatePerson
         string? Cpf,
         string? Phone,
         string? Email
-    ) : IRequest
-    {
-        public Guid ActorUserId { get; set; }
-    }
+    ) : IRequest;
 }
