@@ -1,0 +1,54 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{FBF56CC3-7AE6-AD2D-3F14-7F97FD322CD6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{DFEE68D8-A7D0-1A41-506C-9B74AA9A7B7B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{06CFFD70-14AA-A959-A3BA-1B15D094E3B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronosystem.Application", "Core\Chronosystem.Application\Chronosystem.Application.csproj", "{6F4C2229-B9D9-6966-2209-35E0E78C982B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronosystem.Domain", "Core\Chronosystem.Domain\Chronosystem.Domain.csproj", "{C34CF170-EB29-1920-DAAD-C3BD661B64A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronosystem.Infrastructure", "Infrastructure\Chronosystem.Infrastructure\Chronosystem.Infrastructure.csproj", "{9E4E509B-3183-AF26-17BD-35E633FA0F3D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chronosystem.Api", "Presentation\Chronosystem.Api\Chronosystem.Api.csproj", "{529E08EE-5B61-C70B-7A19-FA106B423B2D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6F4C2229-B9D9-6966-2209-35E0E78C982B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F4C2229-B9D9-6966-2209-35E0E78C982B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F4C2229-B9D9-6966-2209-35E0E78C982B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F4C2229-B9D9-6966-2209-35E0E78C982B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C34CF170-EB29-1920-DAAD-C3BD661B64A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C34CF170-EB29-1920-DAAD-C3BD661B64A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C34CF170-EB29-1920-DAAD-C3BD661B64A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C34CF170-EB29-1920-DAAD-C3BD661B64A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E4E509B-3183-AF26-17BD-35E633FA0F3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E4E509B-3183-AF26-17BD-35E633FA0F3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E4E509B-3183-AF26-17BD-35E633FA0F3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E4E509B-3183-AF26-17BD-35E633FA0F3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{529E08EE-5B61-C70B-7A19-FA106B423B2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{529E08EE-5B61-C70B-7A19-FA106B423B2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{529E08EE-5B61-C70B-7A19-FA106B423B2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{529E08EE-5B61-C70B-7A19-FA106B423B2D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6F4C2229-B9D9-6966-2209-35E0E78C982B} = {FBF56CC3-7AE6-AD2D-3F14-7F97FD322CD6}
+		{C34CF170-EB29-1920-DAAD-C3BD661B64A8} = {FBF56CC3-7AE6-AD2D-3F14-7F97FD322CD6}
+		{9E4E509B-3183-AF26-17BD-35E633FA0F3D} = {DFEE68D8-A7D0-1A41-506C-9B74AA9A7B7B}
+		{529E08EE-5B61-C70B-7A19-FA106B423B2D} = {06CFFD70-14AA-A959-A3BA-1B15D094E3B1}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {60EC3BEB-E9F5-4151-A72D-8D7C25361225}
+	EndGlobalSection
+EndGlobal

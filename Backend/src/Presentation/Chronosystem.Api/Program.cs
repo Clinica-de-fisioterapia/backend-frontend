@@ -150,6 +150,7 @@ builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationD
 builder.Services.AddScoped<ITenantCatalogReader, TenantCatalogReader>();
 builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 
 // --- FluentValidation ---
 builder.Services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly);
