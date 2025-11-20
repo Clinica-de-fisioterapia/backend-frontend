@@ -5,13 +5,12 @@ namespace Chronosystem.Domain.Entities
 public class Person
 {
     public Person() {} 
-    public Person(string fullName, string? cpf, string? phone, string? email, Guid actorUserId)
+    public Person(string fullName, string? cpf, string? phone, string? email)
     {
         FullName = fullName;
         Cpf = cpf;
         Phone = phone;
         Email = email;
-        ActorUserId = actorUserId;
     }
 
     public Guid Id { get; set; }
@@ -22,8 +21,6 @@ public class Person
 
     public Guid? CreatedBy { get; set; }
     public Guid? UpdatedBy { get; set; }
-    public Guid ActorUserId { get; set; }
-
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public long RowVersion { get; set; }

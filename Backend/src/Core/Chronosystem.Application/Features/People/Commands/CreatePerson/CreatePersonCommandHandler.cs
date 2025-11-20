@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Chronosystem.Application.Features.People.Commands.CreatePerson
 {
-   public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, Guid>
+public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, Guid>
 {
     private readonly IPersonRepository _repository;
     private readonly IUnitOfWork _uow;
@@ -32,8 +32,7 @@ namespace Chronosystem.Application.Features.People.Commands.CreatePerson
         request.FullName,
         request.Cpf!,
         request.Phone,
-        request.Email,
-        request.ActorUserId
+        request.Email
     );
 
     await _repository.AddAsync(person);

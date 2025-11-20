@@ -36,11 +36,8 @@ namespace Chronosystem.Api.Controllers
                 dto.Cpf,
                 dto.Phone,
                 dto.Email
-            )
-            {
-                ActorUserId = actorId
-            };
-
+            );
+            
             var id = await _mediator.Send(command);
 
             return CreatedAtAction(nameof(GetById), new { id }, new { id });
