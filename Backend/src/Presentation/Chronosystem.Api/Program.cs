@@ -33,7 +33,7 @@ using Chronosystem.Infrastructure.Tenancy;                // TenantProvisioningS
 using Microsoft.AspNetCore.Authorization;                 // Authorization options
 using Chronosystem.Infrastructure.Security.Permissions;   // Permission policies
 using Npgsql;
-using System.IdentityModel.Tokens.Jwt;                    
+using System.IdentityModel.Tokens.Jwt;
 
 Npgsql.NpgsqlConnection.ClearAllPools();
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +56,20 @@ builder.Services.AddControllers()
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
+
+// --- CORS para permitir o frontend em http://localhost:5239 ---
+// (Necessário para que o navegador não barre as requisições vindas do Vite)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5239") // origem do frontend (Vite)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 // --- Configuração do Swagger ---
 builder.Services.AddSwaggerGen(options =>
@@ -109,7 +123,6 @@ builder.Services.AddSwaggerGen(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-
 // --- DbContext Multi-Tenancy (NpgsqlConnectionStringBuilder evita erros de parsing) ---
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
@@ -141,7 +154,6 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
         .UseNpgsql(csb.ConnectionString)
         .UseSnakeCaseNamingConvention();
 });
-
 
 // --- Repositórios e Unidade de Trabalho ---
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
@@ -213,6 +225,10 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection();
+
+// --- CORS precisa vir antes de autenticação/autorização ---
+// Garante que o navegador receba os headers de CORS inclusive em requisições anônimas
+app.UseCors("FrontendPolicy");
 
 // Resolve tenant do header (seu middleware atual)
 app.UseMiddleware<TenantResolverMiddleware>();
