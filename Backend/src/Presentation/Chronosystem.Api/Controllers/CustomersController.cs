@@ -1,6 +1,5 @@
 using Chronosystem.Application.Features.Customers.Commands.CreateCustomer;
 using Chronosystem.Application.Features.Customers.Commands.DeleteCustomer;
-using Chronosystem.Application.Features.Customers.Commands.UpdateCustomer;
 using Chronosystem.Application.Features.Customers.DTOs;
 using Chronosystem.Application.Features.Customers.Queries.GetAllCustomers;
 using Chronosystem.Application.Features.Customers.Queries.GetCustomerById;
@@ -41,13 +40,6 @@ namespace Chronosystem.API.Controllers
         {
             var id = await _mediator.Send(new CreateCustomerCommand(dto));
             return CreatedAtAction(nameof(GetById), new { id }, null);
-        }
-
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCustomerDto dto)
-        {
-            await _mediator.Send(new UpdateCustomerCommand(id, dto));
-            return NoContent();
         }
 
         [HttpDelete("{id:guid}")]

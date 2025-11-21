@@ -1,41 +1,50 @@
+using Chronosystem.Application.Common.Interfaces.Persistence;
 using FluentValidation;
-using Chronosystem.Application.Features.People.Commands.UpdatePerson;
-
-
-
 
 namespace Chronosystem.Application.Features.People.Commands.UpdatePerson
 {
-public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonCommand>
-{
-public UpdatePersonCommandValidator()
-{
-RuleFor(x => x.Id).NotEmpty();
+    public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonCommand>
+    {
+        public UpdatePersonCommandValidator(IPersonRepository repository)
+        {
+            RuleFor(x => x.FullName)
+                .NotEmpty().WithMessage("FullName is required")
+                .MaximumLength(250);
 
+            // EMAIL =============================================
+            When(x => !string.IsNullOrWhiteSpace(x.Email), () =>
+            {
+                RuleFor(x => x.Email)
+                    .EmailAddress().WithMessage("E-mail inválido");
 
+                RuleFor(x => x)
+                    .MustAsync(async (model, _) =>
+                        !await repository.ExistsByEmailExceptIdAsync(model.Email, model.Id))
+                    .WithMessage("E-mail já cadastrado.");
+            });
 
+            // CPF ===============================================
+            When(x => !string.IsNullOrWhiteSpace(x.Cpf), () =>
+            {
+                RuleFor(x => x.Cpf)
+                    .Must(CpfHelpers.IsValidCpf).WithMessage("CPF inválido")
+                    .MaximumLength(20);
 
-RuleFor(x => x.FullName)
-.NotEmpty().WithMessage("FullName is required")
-.MaximumLength(250);
+                RuleFor(x => x)
+                    .MustAsync(async (model, _) =>
+                        !await repository.ExistsByCpfExceptIdAsync(model.Cpf!, model.Id))
+                    .WithMessage("CPF já cadastrado.");
+            });
 
-
-
-
-When(x => !string.IsNullOrWhiteSpace(x.Cpf), () =>
-{
-RuleFor(x => x.Cpf).Must(CpfHelpers.IsValidCpf).WithMessage("CPF inválido");
-});
-
-
-
-
-When(x => !string.IsNullOrWhiteSpace(x.Email), () =>
-{
-RuleFor(x => x.Email).EmailAddress().WithMessage("E-mail inválido");
-});
+            // PHONE =============================================
+            When(x => !string.IsNullOrWhiteSpace(x.Phone), () =>
+            {
+                RuleFor(x => x.Phone).MaximumLength(50);
+            });
+        }
+    }
 }
-}
+
 public static class CpfHelpers
 {
     public static bool IsValidCpf(string? cpf)
@@ -74,5 +83,4 @@ public static class CpfHelpers
 
         return cpf.EndsWith($"{digito1}{digito2}");
     }
-}
 }

@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<Person> People { get; set; } = default!;
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Professional> Professionals => Set<Professional>();
 
     Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken)
         => base.SaveChangesAsync(cancellationToken);
@@ -131,6 +132,33 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
             entity.HasQueryFilter(c => c.DeletedAt == null);
         });
+
+        // ===== Professional =====
+        modelBuilder.Entity<Professional>(entity =>
+        {
+            entity.ToTable("professionals");
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.PersonId).IsRequired();
+
+            entity.HasOne(p => p.Person)
+                .WithOne()
+                .HasForeignKey<Professional>(p => p.PersonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(p => p.Specialty).HasMaxLength(255);
+
+            entity.Property(p => p.RowVersion)
+                .HasColumnName("row_version")
+                .IsConcurrencyToken()
+                .ValueGeneratedOnAddOrUpdate();
+
+            entity.Property(p => p.CreatedBy).HasColumnName("created_by");
+            entity.Property(p => p.UpdatedBy).HasColumnName("updated_by");
+
+            entity.HasQueryFilter(p => p.DeletedAt == null);
+        });
+
 
 
         // ===== RefreshToken =====

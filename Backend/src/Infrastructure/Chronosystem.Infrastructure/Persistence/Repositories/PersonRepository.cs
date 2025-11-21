@@ -92,4 +92,14 @@ public class PersonRepository : IPersonRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<bool> ExistsByEmailExceptIdAsync(string? email, Guid idToIgnore)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        return await _context.People
+            .AnyAsync(p => p.Email == email && p.Id != idToIgnore);
+    }
+
 }
