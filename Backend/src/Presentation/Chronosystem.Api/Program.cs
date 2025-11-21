@@ -153,6 +153,7 @@ builder.Services.AddScoped<IPersonRepository, PersonRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IProfessionalRepository, ProfessionalRepository>();
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 
 // --- FluentValidation ---
 builder.Services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly);

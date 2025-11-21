@@ -23,6 +23,9 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Professional> Professionals => Set<Professional>();
+    
+    public DbSet<Booking> Bookings => Set<Booking>();
+
 
     Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken cancellationToken)
         => base.SaveChangesAsync(cancellationToken);
@@ -158,6 +161,58 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
             entity.HasQueryFilter(p => p.DeletedAt == null);
         });
+
+        // ===== Booking =====
+        modelBuilder.Entity<Booking>(entity =>
+        {
+            entity.ToTable("bookings");
+            entity.HasKey(b => b.Id);
+
+            entity.Property(b => b.StartTime)
+                .HasColumnName("start_time")
+                .HasColumnType("timestamp with time zone")
+                .IsRequired();
+
+            entity.Property(b => b.EndTime)
+                .HasColumnName("end_time")
+                .HasColumnType("timestamp with time zone")
+                .IsRequired();
+
+            entity.Property(b => b.Status)
+                .HasColumnName("status")
+                .HasMaxLength(50)
+                .HasDefaultValue("confirmed")
+                .IsRequired();
+
+            entity.Property(b => b.RowVersion)
+                .HasColumnName("row_version")
+                .IsConcurrencyToken()
+                .ValueGeneratedOnAddOrUpdate();
+
+            entity.Property(b => b.CreatedBy).HasColumnName("created_by");
+            entity.Property(b => b.UpdatedBy).HasColumnName("updated_by");
+
+            entity.HasOne(b => b.Professional)
+                .WithMany()
+                .HasForeignKey(b => b.ProfessionalId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(b => b.Customer)
+                .WithMany()
+                .HasForeignKey(b => b.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(b => b.Service)
+                .WithMany()
+                .HasForeignKey(b => b.ServiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(b => b.Unit)
+                .WithMany()
+                .HasForeignKey(b => b.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
 
 
 
