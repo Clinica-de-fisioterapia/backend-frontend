@@ -1,18 +1,22 @@
-import { createStore } from 'zustand';
+import { create } from 'zustand';
+import { Customer, Professional } from '../types';
 
-interface UserState {
-    user: User | null;
-    setUser: (user: User | null) => void;
+interface UserStoreState {
+  customers: Customer[];
+  professionals: Professional[];
+  setCustomers: (customers: Customer[]) => void;
+  setProfessionals: (professionals: Professional[]) => void;
+  addCustomer: (customer: Customer) => void;
+  addProfessional: (professional: Professional) => void;
 }
 
-interface User {
-    id: string;
-    fullName: string;
-    email: string;
-    role: string;
-}
-
-export const useUserStore = createStore<UserState>((set) => ({
-    user: null,
-    setUser: (user) => set({ user }),
+export const useUserStore = create<UserStoreState>((set) => ({
+  customers: [],
+  professionals: [],
+  setCustomers: (customers) => set({ customers }),
+  setProfessionals: (professionals) => set({ professionals }),
+  addCustomer: (customer) =>
+    set((state) => ({ customers: [...state.customers, customer] })),
+  addProfessional: (professional) =>
+    set((state) => ({ professionals: [...state.professionals, professional] })),
 }));

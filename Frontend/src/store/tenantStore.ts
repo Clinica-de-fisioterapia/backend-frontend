@@ -1,11 +1,27 @@
-import { createStore } from 'zustand';
+import { create } from 'zustand';
 
 interface TenantState {
-    tenantId: string | null;
-    setTenantId: (id: string | null) => void;
+  tenantId: string | null;
+  tenantName: string | null;
+  subdomain: string | null;
+  setTenant: (id: string, name: string, subdomain: string) => void;
+  clearTenant: () => void;
 }
 
-export const useTenantStore = createStore<TenantState>((set) => ({
-    tenantId: null,
-    setTenantId: (id) => set({ tenantId: id }),
+export const useTenantStore = create<TenantState>((set) => ({
+  tenantId: null,
+  tenantName: null,
+  subdomain: null,
+  setTenant: (id, name, subdomain) =>
+    set({
+      tenantId: id,
+      tenantName: name,
+      subdomain
+    }),
+  clearTenant: () =>
+    set({
+      tenantId: null,
+      tenantName: null,
+      subdomain: null
+    })
 }));

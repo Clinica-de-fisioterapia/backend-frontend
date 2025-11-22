@@ -1,20 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
-import { AuthProvider } from './providers/AuthProvider';
-import { QueryProvider } from './providers/QueryProvider';
-import { ThemeProvider } from './providers/ThemeProvider';
-import router from './router';
+import { router } from './router';
+import { useAuthStore } from './store/authStore';
 
 const App: React.FC = () => {
-  return (
-    <AuthProvider>
-      <QueryProvider>
-        <ThemeProvider>
-          <RouterProvider router={router} />
-        </ThemeProvider>
-      </QueryProvider>
-    </AuthProvider>
-  );
+  const hydrate = useAuthStore((state) => state.hydrate);
+
+  useEffect(() => {
+    // Recuperar dados de autenticação do localStorage ao carregar
+    hydrate();
+  }, [hydrate]);
+
+  return <RouterProvider router={router} />;
 };
 
 export default App;

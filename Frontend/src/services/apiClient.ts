@@ -1,41 +1,44 @@
-import axios from "axios";
+import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const rawEnv = (import.meta as any).env?.VITE_API_URL ?? "";
-let BASE_URL = rawEnv.trim() || "/api";
-if (rawEnv) {
-  BASE_URL = BASE_URL.replace(/\/+$/, "");
-}
+export const BASE_URL = rawEnv.trim() || "http://localhost:5238/api";
 
-// simple axios instance
+
 export const apiClient = axios.create({
   baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Interceptor para adicionar o token de autenticação em todas as requisições
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token"); // ou de onde você estiver armazenando o token
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// Interceptor: Adicionar token em requisições
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  // No contexto da aplicação, o tenant pode estar no localStorage ou ser 'default'
+  const tenant = localStorage.getItem('tenant') || 'default';
+  
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  config.headers['X-Tenant'] = tenant;
+  
+  return config;
+});
 
-// Interceptor para lidar com erros de resposta
+// Interceptor: Tratar erros de resposta
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Aqui você pode adicionar lógica para lidar com erros globais
+    // Redireciona para o login em caso de 401 (Não Autorizado)
+    if (error?.response?.status === 401) {
+      const store = useAuthStore.getState();
+      store.clearAuth();
+      // Navegação pura, assumindo que esta é a camada mais baixa de erro
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
 
-// Removed duplicate re-export to avoid redeclaration conflicts
 export default apiClient;
