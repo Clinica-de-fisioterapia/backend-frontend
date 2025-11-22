@@ -7,12 +7,6 @@ import { Logo } from '../../../components/common/Logo';
 import { Alert } from '../../../components/common/Alert';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
 
-const demoAccounts = [
-  { email: 'admin@clinic.com', role: 'admin' },
-  { email: 'maria@clinic.com', role: 'receptionist' },
-  { email: 'joao@clinic.com', role: 'professional' },
-];
-
 export default function Login() {
   const [email, setEmail] = useState('maria@clinic.com');
   const [password, setPassword] = useState('senha123');
@@ -46,13 +40,6 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoLogin = (acc: typeof demoAccounts[0]) => {
-    setEmail(acc.email);
-    setPassword('senha123');
-    setTenant('empresateste');
-    // A submissão será feita manualmente ou o usuário clica em Entrar
   };
 
   return (
@@ -248,49 +235,6 @@ export default function Login() {
           </button>
         </form>
         <div style={{ marginTop: '20px', borderTop: '1px solid #e5e7eb', paddingTop: '20px' }}>
-          <p style={{
-            margin: '0 0 10px 0',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#111'
-          }}>
-            Acessos Rápidos (Demo):
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {demoAccounts.map((account) => (
-              <button
-                key={account.email}
-                type="button"
-                onClick={() => handleDemoLogin(account)}
-                style={{
-                  textAlign: 'left',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #e5e7eb',
-                  background: 'none',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-              >
-                <div style={{ fontSize: '14px', fontWeight: '500', color: '#111' }}>
-                  {account.email}
-                </div>
-                <div style={{ fontSize: '11px', color: '#6b7280' }}>
-                  {account.role}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div
-          style={{
-            marginTop: '20px',
-            textAlign: 'center',
-            fontSize: '13px',
-            color: '#9ca3af',
-          }}
-        >
           Não tem conta?{' '}
           <button
             type="button"
