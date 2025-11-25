@@ -13,12 +13,9 @@ export default function HubRecepcionista() {
   const { user, clearAuth } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
-
-  // Mocking professionals loading for demo
   const [professionals, setProfessionals] = useState<Professional[]>([]);
 
   useEffect(() => {
-    // Simulação de carregamento de profissionais
     const mockProfessionals: Professional[] = [
       { id: 'p1', full_name: 'Dr. João Silva', email: 'joao@clinic.com', role: 'professional', is_active: true, created_at: new Date().toISOString(), person_id: 'per1', specialty: 'Dentista', registry_code: 'CRM-123' },
       { id: 'p2', full_name: 'Dra. Maria Oliveira', email: 'maria@clinic.com', role: 'professional', is_active: true, created_at: new Date().toISOString(), person_id: 'per2', specialty: 'Fisioterapeuta', registry_code: 'CREFITO-456' },
@@ -38,11 +35,15 @@ export default function HubRecepcionista() {
       'bookings': '/receptionist/hub',
       'customers': '/receptionist/customers'
     };
-    navigate(routes[view] || '/receptionist/hub');
+    
+    const route = routes[view];
+    if (route) {
+      navigate(route);
+    }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f9fafb' }} >
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f9fafb' }}>
       <Header 
         user={user} 
         onLogout={handleLogout} 
@@ -61,9 +62,9 @@ export default function HubRecepcionista() {
           display: 'grid', 
           gridTemplateColumns: '2fr 1fr', 
           gap: '24px' 
-        }} >
+        }}>
           <div>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#111' }} > 
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#111' }}>
               📅 Calendário de Agendamentos 
             </h2>
             <OptimizedCalendar 
@@ -71,10 +72,9 @@ export default function HubRecepcionista() {
               onDaySelect={setSelectedDate} 
               selectedDate={selectedDate} 
             />
-            {/* Outros componentes de visualização de calendário iriam aqui */}
           </div>
           <div>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#111' }} > 
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#111' }}>
               📋 Agenda do Dia 
             </h2>
             <AgendaView 

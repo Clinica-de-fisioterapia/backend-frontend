@@ -6,23 +6,21 @@ import { Header } from '../../../components/common/Header';
 import { Sidebar } from '../../../components/common/Sidebar';
 import { Customer } from '../../../types';
 import { Plus, Edit, Trash2 } from 'lucide-react';
-import { customerApi } from '../../../services/api/customerApi';
+
+// Interface para o tipo estendido de Customer com campos adicionais
+interface CustomerWithExtras extends Customer {
+  name?: string;
+}
 
 export default function GerenciarClientes() {
   const navigate = useNavigate();
   const { user, clearAuth } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  // Mocking customers loading for demo
-  const [customers, setCustomers] = useState<
-    (Customer & { name: string; phone: string })[]
-  >([]);
+  const [customers, setCustomers] = useState<CustomerWithExtras[]>([]);
 
   useEffect(() => {
-    // Simulação de carregamento de clientes
     const fetchCustomers = async () => {
-      // Na aplicação real, usaria customerApi.getAll()
-      const mockCustomers = [
+      const mockCustomers: CustomerWithExtras[] = [
         { 
           id: 'c1', 
           full_name: 'Alice Souza', 
@@ -31,7 +29,7 @@ export default function GerenciarClientes() {
           cpf: '111.111.111-11', 
           person_id: 'perA', 
           created_at: new Date().toISOString(),
-          name: 'Alice Souza', // Adicionando para simplificar a tabela de mock
+          name: 'Alice Souza',
         },
         { 
           id: 'c2', 
@@ -41,10 +39,10 @@ export default function GerenciarClientes() {
           cpf: '222.222.222-22', 
           person_id: 'perB', 
           created_at: new Date().toISOString(),
-          name: 'Roberto Silva', // Adicionando para simplificar a tabela de mock
+          name: 'Roberto Silva',
         },
       ];
-      setCustomers(mockCustomers as any);
+      setCustomers(mockCustomers);
     };
     fetchCustomers();
   }, []);
@@ -56,11 +54,27 @@ export default function GerenciarClientes() {
   };
 
   const handleNavigate = (view: string) => {
-    const routes: Record<string, string> = {
+    // Determinar se é admin ou receptionist
+    const isAdmin = user?.role === 'admin';
+    
+    const routes: Record<string, string> = isAdmin ? {
+      // Rotas Admin
+      'dashboard': '/admin/dashboard',
+      'bookings': '/admin/bookings',
+      'professionals': '/admin/professionals',
+      'customers': '/admin/customers',
+      'units': '/admin/units',
+      'settings': '/admin/settings',
+    } : {
+      // Rotas Receptionist
       'bookings': '/receptionist/hub',
       'customers': '/receptionist/customers'
     };
-    navigate(routes[view] || '/receptionist/hub');
+    
+    const route = routes[view];
+    if (route) {
+      navigate(route);
+    }
   };
 
   const handleEdit = (id: string) => {
@@ -69,8 +83,7 @@ export default function GerenciarClientes() {
 
   const handleDelete = (id: string) => {
     if (window.confirm(`Tem certeza que deseja deletar o cliente ${id}?`)) {
-      // Na aplicação real: await customerApi.delete(id);
-      setCustomers(prev => prev.filter(c => c.id !== id));
+      setCustomers((prev) => prev.filter((c) => c.id !== id));
       alert(`Cliente ${id} deletado (simulação).`);
     }
   };
@@ -80,7 +93,7 @@ export default function GerenciarClientes() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f9fafb' }} >
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f9fafb' }}>
       <Header 
         user={user} 
         onLogout={handleLogout} 
@@ -89,11 +102,11 @@ export default function GerenciarClientes() {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <Sidebar 
           isOpen={sidebarOpen} 
-          role={user?.role || 'receptionist'} // Usar role do usuário
+          role={user?.role || 'receptionist'}
           onNavigate={handleNavigate} 
         />
         <main style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          <h2 style={{ margin: '0 0 24px 0', fontSize: '28px', fontWeight: '700', color: '#111' }} > 
+          <h2 style={{ margin: '0 0 24px 0', fontSize: '28px', fontWeight: '700', color: '#111' }}>
             👥 Gerenciar Clientes 
           </h2>
 
@@ -109,30 +122,32 @@ export default function GerenciarClientes() {
                 alignItems: 'center',
                 gap: '8px',
                 fontSize: '14px',
-                fontWeight: '600'
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer'
               }}
             >
               <Plus size={18} /> Novo Cliente
             </button>
           </div>
 
-          <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflowX: 'auto' }} >
+          <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#111' }}> Nome </th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#111' }}> Email </th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#111' }}> Telefone </th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: '#111' }}> Ações </th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#111' }}>Nome</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#111' }}>Email</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#111' }}>Telefone</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: '#111' }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {customers.map((customer) => (
                   <tr key={customer.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                     <td style={{ padding: '12px 16px', color: '#111' }}>{customer.full_name}</td>
-                    <td style={{ padding: '12px 16px', color: '#111' }}>{customer.email}</td>
-                    <td style={{ padding: '12px 16px', color: '#111' }}>{customer.phone}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }} >
+                    <td style={{ padding: '12px 16px', color: '#111' }}>{customer.email || '-'}</td>
+                    <td style={{ padding: '12px 16px', color: '#111' }}>{customer.phone || '-'}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                         <button
                           onClick={() => handleEdit(customer.id)}
@@ -143,6 +158,8 @@ export default function GerenciarClientes() {
                             borderRadius: '4px',
                             display: 'flex',
                             alignItems: 'center',
+                            border: 'none',
+                            cursor: 'pointer'
                           }}
                         >
                           <Edit size={16} />
@@ -156,6 +173,8 @@ export default function GerenciarClientes() {
                             borderRadius: '4px',
                             display: 'flex',
                             alignItems: 'center',
+                            border: 'none',
+                            cursor: 'pointer'
                           }}
                         >
                           <Trash2 size={16} />
@@ -164,13 +183,13 @@ export default function GerenciarClientes() {
                     </td>
                   </tr>
                 ))}
-                customers.length === 0 && (
+                {customers.length === 0 && (
                   <tr>
                     <td colSpan={4} style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
                       Nenhum cliente cadastrado.
                     </td>
                   </tr>
-                )
+                )}
               </tbody>
             </table>
           </div>
