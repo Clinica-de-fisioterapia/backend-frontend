@@ -5,6 +5,8 @@ import Register from './features/auth/pages/Register';
 import HubRecepcionista from './features/receptionist/pages/HubRecepcionista';
 import GerenciarClientes from './features/receptionist/pages/GerenciarClientes';
 import AdminDashboard from './features/admin/pages/AdminDashboard';
+import CalendarioAgendamentos from './features/admin/pages/CalendarioAgendamentos'; // NOVO
+import { CalendarioAvancado } from './features/calendar/CalendarioAvancado'; // NOVO
 import GerenciarProfissionais from './features/admin/pages/GerenciarProfissionais';
 import GerenciarUnidades from './features/admin/pages/GerenciarUnidades';
 import GerenciarConfiguracoes from './features/admin/pages/GerenciarConfiguracoes';
@@ -29,10 +31,18 @@ export const router = createBrowserRouter([
     )
   },
   {
-    path: '/admin/bookings',
+    path: '/admin/calendar', // ROTA DO CALENDÁRIO
     element: (
       <ProtectedRoute allowedRoles={['admin']}>
-        <AdminDashboard />
+        <CalendarioAgendamentos />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: '/admin/calendar-advanced', // ROTA DO CALENDÁRIO AVANÇADO
+    element: (
+      <ProtectedRoute allowedRoles={['admin']}>
+        <CalendarioAvancado />
       </ProtectedRoute>
     )
   },

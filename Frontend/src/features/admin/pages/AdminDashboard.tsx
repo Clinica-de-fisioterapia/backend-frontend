@@ -23,10 +23,9 @@ export default function AdminDashboard() {
   };
 
   const handleNavigate = (view: string) => {
-    // Mapeamento correto dos IDs do Sidebar para rotas
     const routes: Record<string, string> = {
       'dashboard': '/admin/dashboard',
-      'bookings': '/admin/bookings',
+      'bookings': '/admin/calendar',  // ✅ MUDOU AQUI
       'professionals': '/admin/professionals',
       'customers': '/admin/customers',
       'units': '/admin/units',
