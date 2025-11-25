@@ -23,11 +23,22 @@ export default function AdminDashboard() {
   };
 
   const handleNavigate = (view: string) => {
+    // Mapeamento correto dos IDs do Sidebar para rotas
     const routes: Record<string, string> = {
       'dashboard': '/admin/dashboard',
-      // Adicionar rotas admin aqui...
+      'bookings': '/admin/bookings',
+      'professionals': '/admin/professionals',
+      'customers': '/admin/customers',
+      'units': '/admin/units',
+      'settings': '/admin/settings',
     };
-    navigate(routes[view] || '/admin/dashboard');
+    
+    const route = routes[view];
+    if (route) {
+      navigate(route);
+    } else {
+      console.warn(`Rota não encontrada para view: ${view}`);
+    }
   };
 
   const cards = [
@@ -35,30 +46,30 @@ export default function AdminDashboard() {
       title: 'Agendamentos Hoje',
       value: 45,
       icon: <Calendar size={32} />,
-      color: '#10b981', // green-500
+      color: '#10b981',
     },
     {
       title: 'Total de Clientes',
       value: 1200,
       icon: <Users size={32} />,
-      color: '#3b82f6', // blue-500
+      color: '#3b82f6',
     },
     {
       title: 'Faturamento Mensal',
       value: 'R$ 85.000',
       icon: <DollarSign size={32} />,
-      color: '#f59e0b', // amber-500
+      color: '#f59e0b',
     },
     {
       title: 'Média de Atendimento',
       value: '45 min',
       icon: <Clock size={32} />,
-      color: '#8b5cf6', // violet-500
+      color: '#8b5cf6',
     },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f9fafb' }} >
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f9fafb' }}>
       <Header 
         user={user} 
         onLogout={handleLogout} 
@@ -71,7 +82,7 @@ export default function AdminDashboard() {
           onNavigate={handleNavigate} 
         />
         <main style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          <h2 style={{ margin: '0 0 24px 0', fontSize: '28px', fontWeight: '700', color: '#111' }} > 
+          <h2 style={{ margin: '0 0 24px 0', fontSize: '28px', fontWeight: '700', color: '#111' }}>
             📊 Dashboard Administrativo 
           </h2>
           
@@ -81,7 +92,7 @@ export default function AdminDashboard() {
               gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
               gap: '20px', 
               marginBottom: '32px' 
-            }} 
+            }}
           >
             {cards.map((card) => (
               <div 
@@ -94,7 +105,7 @@ export default function AdminDashboard() {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                   transition: 'all 0.2s',
                   cursor: 'default'
-                }} 
+                }}
                 onMouseEnter={(e) => { 
                   e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)'; 
                   e.currentTarget.style.transform = 'translateY(-4px)';
@@ -131,8 +142,8 @@ export default function AdminDashboard() {
             Visão Geral Rápida
           </h3>
           <div style={{ background: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-            <p style={{ color: '#6b7280' }}>
-              Detalhes sobre a ocupação de unidades e o desempenho dos profissionais estariam aqui.
+            <p style={{ color: '#6b7280', margin: 0 }}>
+              Detalhes sobre a ocupação de unidades e o desempenho dos profissionais estarão aqui.
             </p>
           </div>
 

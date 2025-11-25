@@ -37,11 +37,11 @@ export default function Register() {
     setLoading(true);
     try {
       await authService.signup({
-        CompanyName: form.companyName,
-        Subdomain: form.subdomain,
-        AdminFullName: form.adminFullName,
-        AdminEmail: form.adminEmail,
-        AdminPassword: form.adminPassword,
+        companyName: form.companyName,
+        subdomain: form.subdomain,
+        adminFullName: form.adminFullName,
+        adminEmail: form.adminEmail,
+        adminPassword: form.adminPassword,
       });
       setSuccess('Conta criada com sucesso! Você será redirecionado para o login.');
       setTimeout(() => {
