@@ -306,7 +306,7 @@ export const CalendarioAvancado: React.FC = () => {
       </div>
       
       {/* Conteúdo Principal */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', flex: 1, overflow: 'auto' }}> {/* CORRIGIDO: Removido padding, alterado overflow */}
         
         {/* LADO ESQUERDO: Calendário Mensal */}
         <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', display: 'flex', flexDirection: 'column' }}>

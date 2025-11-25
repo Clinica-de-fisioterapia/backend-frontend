@@ -40,13 +40,13 @@ export default function CalendarioAgendamentos() {
         onLogout={handleLogout} 
         onMenuToggle={() => setSidebarOpen(!sidebarOpen)} 
       />
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1 }}> {/* CORRIGIDO: Removido overflow: 'hidden' */}
         <Sidebar 
           isOpen={sidebarOpen} 
           role="admin" 
           onNavigate={handleNavigate} 
         />
-        <main style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
+        <main style={{ flex: 1, overflowY: 'auto', padding: '24px' }}> {/* CORRIGIDO: Padding adicionado */}
           <CalendarioAvancado />
         </main>
       </div>
