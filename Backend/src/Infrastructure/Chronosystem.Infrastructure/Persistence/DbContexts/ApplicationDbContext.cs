@@ -11,7 +11,7 @@ using System;
 
 namespace Chronosystem.Infrastructure.Persistence.DbContexts;
 
-public class ApplicationDbContext : DbContext, IUnitOfWork
+public class ApplicationDbContext : DbContext, IUnitOfWork, IApplicationDbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options) { }
