@@ -22,11 +22,11 @@ export const API_ENDPOINTS = {
   AUTH_LOGOUT: '/auth/logout',
   AUTH_REFRESH: '/auth/refresh',
   
-  USERS: '/users',
-  PROFESSIONALS: '/professionals',
+  USERS: '/Users',
+  PROFESSIONALS: '/Professional',
   CUSTOMERS: '/customers',
-  BOOKINGS: '/bookings',
+  BOOKINGS: '/Bookings',
   SERVICES: '/services',
-  UNITS: '/units',
-  PEOPLE: '/people',
+  UNITS: '/Units',
+  PEOPLE: '/People',
 } as const;

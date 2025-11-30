@@ -13,7 +13,7 @@ export const professionalApi = {
     return response.data;
   },
 
-  create: async (professional: Omit<Professional, 'id' | 'created_at'>): Promise<Professional> => {
+  create: async (professional: Omit<Professional, 'id' | 'specialty'>): Promise<Professional> => {
     const response = await apiClient.post(API_ENDPOINTS.PROFESSIONALS, professional);
     return response.data;
   },
