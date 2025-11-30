@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Chronosystem.Application.Scheduling.Queries.GetProfessionalDayBookings;
 
-public sealed class GetProfessionalDayBookingsQueryHandler : IRequestHandler<GetProfessionalDayBookingsQuery, ProfessionalDayBookingsResponse>
+public sealed class GetProfessionalDayBookingsQueryHandler
+    : IRequestHandler<GetProfessionalDayBookingsQuery, ProfessionalDayBookingsResponse>
 {
     private readonly IApplicationDbContext _context;
 
@@ -13,29 +14,33 @@ public sealed class GetProfessionalDayBookingsQueryHandler : IRequestHandler<Get
         _context = context;
     }
 
-    public async Task<ProfessionalDayBookingsResponse> Handle(GetProfessionalDayBookingsQuery request, CancellationToken cancellationToken)
+    public async Task<ProfessionalDayBookingsResponse> Handle(
+        GetProfessionalDayBookingsQuery request,
+        CancellationToken cancellationToken)
     {
         var professionalExists = await _context.Professionals
             .AsNoTracking()
-            .AnyAsync(p => p.Id == request.ProfessionalId, cancellationToken);
+            .AnyAsync(
+                p => p.Id == request.ProfessionalId /* && p.DeletedAt == null */,
+                cancellationToken);
 
         if (!professionalExists)
         {
+            // Pode trocar depois por uma NotFoundException customizada
             throw new KeyNotFoundException("Profissional não encontrado.");
         }
 
+        // Início e fim do dia em UTC, como DateTime
         var dayStartUtc = request.Date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        var dayEndUtc = request.Date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
-
-        var dayStartOffset = new DateTimeOffset(dayStartUtc);
-        var dayEndOffset = new DateTimeOffset(dayEndUtc);
+        var dayEndUtc   = request.Date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
         var bookings = await _context.Bookings
             .AsNoTracking()
-            .Where(b => b.ProfessionalId == request.ProfessionalId
-                        && b.StartTime >= dayStartOffset
-                        && b.StartTime <= dayEndOffset
-                        && b.DeletedAt == null)
+            .Where(b =>
+                b.ProfessionalId == request.ProfessionalId &&
+                b.DeletedAt == null &&
+                b.StartTime >= dayStartUtc &&
+                b.StartTime <= dayEndUtc)
             .OrderBy(b => b.StartTime)
             .Select(b => new ProfessionalBookingSlotDto
             {
@@ -44,9 +49,11 @@ public sealed class GetProfessionalDayBookingsQueryHandler : IRequestHandler<Get
                 CustomerId = b.CustomerId,
                 ServiceId = b.ServiceId,
                 UnitId = b.UnitId,
-                StartTime = b.StartTime.UtcDateTime,
-                EndTime = b.EndTime.UtcDateTime,
-                Status = b.Status
+
+                // Já é DateTime em UTC
+                StartTime = b.StartTime,
+                EndTime   = b.EndTime,
+                Status    = b.Status
             })
             .ToListAsync(cancellationToken);
 

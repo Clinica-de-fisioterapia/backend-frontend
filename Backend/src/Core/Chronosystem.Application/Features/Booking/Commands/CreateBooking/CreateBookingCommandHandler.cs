@@ -2,6 +2,7 @@ using Chronosystem.Application.Common.Interfaces.Persistence;
 using Chronosystem.Application.Features.Bookings.Commands.CreateBooking;
 using Chronosystem.Domain.Entities;
 using MediatR;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,8 +29,11 @@ namespace Chronosystem.Application.Features.Bookings.Commands.CreateBooking
                 CustomerId = dto.CustomerId,
                 ServiceId = dto.ServiceId,
                 UnitId = dto.UnitId,
-                StartTime = dto.StartTime,
-                EndTime = dto.EndTime,
+
+                // ✔ Correção: converter DateTimeOffset → DateTime (UTC)
+                StartTime = dto.StartTime.UtcDateTime,
+                EndTime   = dto.EndTime.UtcDateTime,
+
                 Status = "confirmed"
             };
 

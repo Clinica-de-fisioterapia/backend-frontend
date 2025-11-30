@@ -216,6 +216,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork, IApplicationDbContex
 
 
 
+
         // ===== RefreshToken =====
         modelBuilder.Entity<RefreshToken>().Ignore(rt => rt.CreatedBy);
         modelBuilder.Entity<RefreshToken>().Ignore(rt => rt.UpdatedBy);

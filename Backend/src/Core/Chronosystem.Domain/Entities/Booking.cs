@@ -17,8 +17,9 @@ namespace Chronosystem.Domain.Entities
         public Guid UnitId { get; set; }
         public Unit Unit { get; set; } = default!;
 
-        public DateTimeOffset StartTime { get; set; }
-        public DateTimeOffset EndTime { get; set; }
+        // ✅ Agora em DateTime (UTC)
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
 
         public string Status { get; set; } = "confirmed";
 
