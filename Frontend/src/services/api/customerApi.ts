@@ -13,10 +13,12 @@ export const customerApi = {
     return response.data;
   },
 
-  create: async (customer: Omit<Customer, 'id' | 'created_at'>): Promise<Customer> => {
-    const response = await apiClient.post(API_ENDPOINTS.CUSTOMERS, customer);
-    return response.data;
-  },
+  create: async (customer: {
+      person_id: string;
+    }): Promise<{ id: string }> => {
+      const response = await apiClient.post(API_ENDPOINTS.CUSTOMERS, customer);
+      return response.data;
+    },
 
   update: async (id: string, customer: Partial<Customer>): Promise<Customer> => {
     const response = await apiClient.put(`${API_ENDPOINTS.CUSTOMERS}/${id}`, customer);
@@ -26,12 +28,6 @@ export const customerApi = {
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`${API_ENDPOINTS.CUSTOMERS}/${id}`);
   },
-
-  createFromPerson: async (person: Person): Promise<Customer> => {
-    const personResponse = await apiClient.post(API_ENDPOINTS.PEOPLE, person);
-    const customerResponse = await apiClient.post(API_ENDPOINTS.CUSTOMERS, {
-      person_id: personResponse.data.id,
-    });
-    return customerResponse.data;
-  },
+  
+  // A função createFromPerson foi removida conforme solicitado.
 };

@@ -27,7 +27,6 @@ export interface Customer {
   full_name: string;
   email?: string;
   phone?: string;
-  cpf?: string;
   person_id: string;
   created_at: string;
 }
