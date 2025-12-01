@@ -158,6 +158,7 @@ export default function GerenciarProfissionais() {
     setSuccess('');
 
     try {
+      // CORREÇÃO: Enviando o campo is_active para a API
       await professionalApi.create({
         personId: newPersonId!,
         specialty: formDataProfessional.specialty,
@@ -284,7 +285,6 @@ export default function GerenciarProfissionais() {
                     <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#111', fontSize: '14px' }}>Email</th>
                     <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#111', fontSize: '14px' }}>Especialidade</th>
                     <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600', color: '#111', fontSize: '14px' }}>Registro</th>
-                    <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#111', fontSize: '14px' }}>Status</th>
                     <th style={{ padding: '16px', textAlign: 'center', fontWeight: '600', color: '#111', fontSize: '14px' }}>Ações</th>
                   </tr>
                 </thead>
@@ -305,16 +305,6 @@ export default function GerenciarProfissionais() {
                       </td>
                       <td style={{ padding: '16px', color: '#6b7280', fontSize: '14px' }}>{professional.registry_code || '-'}</td>
                       <td style={{ padding: '16px', textAlign: 'center' }}>
-                        <span style={{
-                          background: professional.is_active ? '#dcfce7' : '#fee2e2',
-                          color: professional.is_active ? '#166534' : '#991b1b',
-                          padding: '4px 12px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: '600'
-                        }}>
-                          {professional.is_active ? '✓ Ativo' : '✗ Inativo'}
-                        </span>
                       </td>
                       <td style={{ padding: '16px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
