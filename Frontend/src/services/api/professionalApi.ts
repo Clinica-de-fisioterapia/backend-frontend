@@ -20,12 +20,12 @@ export const professionalApi = {
   },
 
   /**
-   * Cria um novo profissional.
-   * A função 'create' espera um objeto Professional sem 'id' e 'created_at'.
-   * Observação: A criação da 'Person' associada deve ser tratada no backend ou em uma chamada anterior/composta,
-   * para seguir o padrão CRUD simples das outras APIs.
+   * Cria um novo profissional a partir de um PersonId existente.
    */
-  create: async (professional: Omit<Professional, 'id' | 'created_at'>): Promise<Professional> => {
+  create: async (professional: {
+    personId: string;
+    specialty?: string;
+  }): Promise<{ id: string }> => {
     const response = await apiClient.post(API_ENDPOINTS.PROFESSIONALS, professional);
     return response.data;
   },
