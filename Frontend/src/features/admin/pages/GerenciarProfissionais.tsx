@@ -12,11 +12,18 @@ import { peopleApi } from '../../../services/api/peopleApi'; // Importando peopl
 import apiClient from '../../../services/apiClient';
 import { Plus, Edit, Trash2, Search, X } from 'lucide-react';
 
+// Tipo de Profissional mesclado para incluir os campos da Pessoa necessários para a tabela
+type MergedProfessional = Professional & {
+  full_name: string;
+  email: string;
+}
+
 export default function GerenciarProfissionais() {
   const navigate = useNavigate();
   const { user, clearAuth } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  // O estado agora armazena o tipo mesclado
+  const [professionals, setProfessionals] = useState<MergedProfessional[]>([]); 
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,8 +51,38 @@ export default function GerenciarProfissionais() {
   const fetchProfessionals = async () => {
     try {
       setLoading(true);
-      const data = await professionalApi.getAll();
-      setProfessionals(data);
+
+      // Busca dados de Profissionais e Pessoas simultaneamente
+      const [professionalData, peopleData] = await Promise.all([
+        professionalApi.getAll() as Promise<Professional[] & { personId: string }[]>, // Assumindo que Professional tem personId
+        peopleApi.getAll() as Promise<Person[]>,
+      ]);
+
+      // Cria um mapa de Pessoas para lookup rápido pelo ID
+      const peopleMap = new Map<string, Person>(peopleData.map(person => [person.id, person]));
+
+      // Mescla os dados da Pessoa no Profissional
+      const mergedProfessionals = professionalData.map(prof => {
+        // Usa `personId` para encontrar a Pessoa correspondente.
+        // É necessário garantir que o objeto profissional tenha a propriedade personId.
+        const professionalWithPersonId = prof as Professional & { personId: string };
+        const person = peopleMap.get(professionalWithPersonId.personId);
+
+        if (person) {
+          // Retorna o objeto do profissional com os campos full_name e email da Pessoa
+          return {
+            ...prof,
+            full_name: person.fullName, // Mapeia Person.fullName para Professional.full_name
+            email: person.email,     // Mapeia Person.email para Professional.email
+          } as MergedProfessional;
+        }
+        
+        // Se a Pessoa não for encontrada, retorna o profissional como está (com full_name/email possivelmente vazios)
+        return { ...prof, full_name: (prof as any).full_name || '', email: (prof as any).email || '' } as MergedProfessional;
+      });
+
+      setProfessionals(mergedProfessionals);
+      setPeople(peopleData);
       setError('');
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar profissionais');
@@ -145,14 +182,14 @@ export default function GerenciarProfissionais() {
     }
   };
 
-  const filteredPeople = people.filter((peo) =>
-    peo.full_name && peo.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    peo.email && peo.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Removemos o filteredPeople não utilizado
 
   const filteredProfessionals = professionals.filter((prof) =>
-    prof.registry_code && prof.registry_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (prof.specialty && prof.specialty.toLowerCase().includes(searchTerm.toLowerCase()))
+    (prof.registry_code && prof.registry_code.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (prof.specialty && prof.specialty.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    // Adicionamos full_name e email à busca, que agora estão mesclados
+    (prof.full_name && prof.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (prof.email && prof.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -260,8 +297,9 @@ export default function GerenciarProfissionais() {
                     }}
                       onMouseEnter={(e) => { e.currentTarget.style.background = '#f0f9ff'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc'; }}>
-                      <td style={{ padding: '16px', color: '#111', fontWeight: '500' }}>{professional.full_name}</td>
-                      <td style={{ padding: '16px', color: '#6b7280', fontSize: '14px' }}>{professional.email}</td>
+                      {/* Estes campos agora devem ser preenchidos pelo merge na função fetchProfessionals */}
+                      <td style={{ padding: '16px', color: '#111', fontWeight: '500' }}>{professional.full_name || '-'}</td>
+                      <td style={{ padding: '16px', color: '#6b7280', fontSize: '14px' }}>{professional.email || '-'}</td>
                       <td style={{ padding: '16px', color: '#6b7280', fontSize: '14px' }}>
                         {professional.specialty || '-'}
                       </td>
@@ -430,13 +468,12 @@ export default function GerenciarProfissionais() {
 
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500', color: '#111' }}>
-                  Email *
+                  Email
                 </label>
                 <input
                   type="email"
                   value={formDataPeople.email}
                   onChange={(e) => setFormDataPeople({ ...formDataPeople, email: e.target.value })}
-                  required
                   placeholder="email@exemplo.com"
                   style={{
                     width: '100%',
@@ -451,7 +488,7 @@ export default function GerenciarProfissionais() {
 
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500', color: '#111' }}>
-                  Telefone *
+                  Telefone
                 </label>
                 <input
                   type="text"
@@ -464,7 +501,6 @@ export default function GerenciarProfissionais() {
                       setFormDataPeople({ ...formDataPeople, phone: value });
                     }
                   }}
-                  required
                   placeholder="(00) 00000-0000"
                   maxLength={15}
                   style={{
@@ -480,7 +516,7 @@ export default function GerenciarProfissionais() {
 
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500', color: '#111' }}>
-                  CPF *
+                  CPF
                 </label>
                 <input
                   type="text"
@@ -494,7 +530,6 @@ export default function GerenciarProfissionais() {
                       setFormDataPeople({ ...formDataPeople, cpf: value });
                     }
                   }}
-                  required
                   placeholder="000.000.000-00"
                   maxLength={14}
                   style={{

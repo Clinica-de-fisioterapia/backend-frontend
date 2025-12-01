@@ -71,7 +71,7 @@ export interface ScheduleException {
 
 export interface Person {
   id: string;
-  full_name: string;
+  fullName: string;
   email?: string;
   phone?: string;
   cpf?: string;
