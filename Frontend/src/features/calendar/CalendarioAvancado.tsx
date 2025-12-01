@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, User, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 // Mock de dados
 const PROFESSIONALS = [
@@ -15,17 +15,233 @@ interface Appointment {
   title: string;
   patient: string;
   type: string;
+  date: string; // Obrigatório para a persistência
+  professionalId: string; // Obrigatório para a persistência
 }
 
 const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
+// ==========================================================
+// COMPONENTE: MODAL PARA FORMULÁRIO DE AGENDAMENTO
+// ==========================================================
+interface AgendamentoFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  selectedDate: Date;
+  selectedProfessionalId: string;
+  onSave: (appointment: Appointment) => void; // NOVO: Função para salvar
+}
+
+const AgendamentoFormModal: React.FC<AgendamentoFormModalProps> = ({ isOpen, onClose, selectedDate, selectedProfessionalId, onSave }) => {
+  if (!isOpen) return null;
+
+  const initialFormState: Partial<Appointment> = {
+    date: selectedDate.toISOString().split('T')[0],
+    time: '09:00',
+    duration: 60,
+    title: 'Consulta de Rotina', // Padrão
+    patient: '',
+    type: 'Presencial',
+    professionalId: selectedProfessionalId
+  };
+
+  const [formData, setFormData] = useState<Partial<Appointment>>(initialFormState);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: name === 'duration' ? Number(value) : value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Garante que todos os campos obrigatórios estão preenchidos
+    if (formData.date && formData.time && formData.patient && formData.professionalId && formData.duration && formData.title) {
+        // Chama a função onSave do componente pai
+        onSave(formData as Appointment); 
+        console.log('✅ Novo Agendamento Enviado e Salvo:', formData);
+    }
+    onClose(); // Fecha o modal
+  };
+
+  const formInputStyle: React.CSSProperties = {
+    padding: '10px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    width: '100%',
+    boxSizing: 'border-box',
+    color: '#374151'
+  };
+
+  const formLabelStyle: React.CSSProperties = {
+    display: 'block',
+    marginBottom: '6px',
+    fontWeight: '500',
+    color: '#374151'
+  };
+
+  return (
+    // Backdrop (fundo escurecido)
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0, 0, 0, 0.5)', zIndex: 1000,
+      display: 'flex', justifyContent: 'center', alignItems: 'center'
+    }}>
+      {/* Container do Modal */}
+      <div style={{
+        background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px',
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)', maxHeight: '90vh', overflowY: 'auto'
+      }}>
+        <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', color: '#111827' }}>Novo Agendamento</h2>
+        
+        <form onSubmit={handleSubmit}>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <label style={formLabelStyle} htmlFor="professionalId">Profissional</label>
+            <select
+              id="professionalId"
+              name="professionalId"
+              value={formData.professionalId}
+              onChange={handleChange}
+              style={formInputStyle}
+              required
+            >
+              {PROFESSIONALS.map(p => (
+                <option key={p.id} value={p.id}>{p.name} ({p.role})</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={formLabelStyle} htmlFor="patient">Nome do Paciente</label>
+            <input
+              type="text"
+              id="patient"
+              name="patient"
+              value={formData.patient}
+              onChange={handleChange}
+              style={formInputStyle}
+              placeholder="Ex: Maria da Silva"
+              required
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div>
+              <label style={formLabelStyle} htmlFor="date">Data</label>
+              <input
+                type="date"
+                id="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                style={formInputStyle}
+                required
+              />
+            </div>
+            <div>
+              <label style={formLabelStyle} htmlFor="time">Hora</label>
+              <input
+                type="time"
+                id="time"
+                name="time"
+                value={formData.time}
+                onChange={handleChange}
+                style={formInputStyle}
+                required
+              />
+            </div>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            <div>
+              <label style={formLabelStyle} htmlFor="duration">Duração (min)</label>
+              <input
+                type="number"
+                id="duration"
+                name="duration"
+                value={formData.duration}
+                onChange={handleChange}
+                style={formInputStyle}
+                min="10"
+                step="10"
+                required
+              />
+            </div>
+            <div>
+              <label style={formLabelStyle} htmlFor="type">Tipo</label>
+              <select
+                id="type"
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                style={formInputStyle}
+                required
+              >
+                <option value="Presencial">Presencial</option>
+                <option value="Online">Online</option>
+                <option value="Ambulatório">Ambulatório</option>
+                <option value="Cirurgia">Cirurgia</option>
+              </select>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '10px 20px', borderRadius: '8px',
+                border: '1px solid #d1d5db', background: 'white',
+                color: '#374151', cursor: 'pointer', fontWeight: '600'
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: '10px 20px', borderRadius: '8px',
+                border: 'none', background: '#2563eb', 
+                color: 'white', cursor: 'pointer', fontWeight: '600',
+                display: 'flex', alignItems: 'center', gap: '8px'
+              }}
+            >
+              <Plus size={18} /> Agendar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+// ==========================================================
+
+
 export const CalendarioAvancado: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState(PROFESSIONALS[0].id);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isNewAppointmentModalOpen, setIsNewAppointmentModalOpen] = useState(false);
+  
+  // NOVO ESTADO: Armazena os agendamentos criados pelo usuário
+  const [userAppointments, setUserAppointments] = useState<Appointment[]>([]); 
 
-  // Mock de disponibilidade
+  // Função para salvar o novo agendamento no estado
+  const handleSaveAppointment = (newAppointment: Appointment) => {
+    setUserAppointments(prev => [
+      ...prev, 
+      { 
+        ...newAppointment, 
+        id: Date.now().toString(), // Adiciona um ID temporário
+        title: newAppointment.title || 'Consulta', // Garante um título
+      }
+    ]);
+    setIsNewAppointmentModalOpen(false);
+  };
+
+  // Mock de disponibilidade (Não alterado)
   const getDayAvailability = (date: Date): 'high' | 'low' | 'full' | 'none' => {
     const day = date.getDate();
     if (day === 15) return 'none';
@@ -34,7 +250,7 @@ export const CalendarioAvancado: React.FC = () => {
     return 'high';
   };
 
-  // Mock de agendamentos
+  // Mock de agendamentos (Agora inclui date e professionalId)
   const getMockAppointments = (dateString: string, professionalId: string): Appointment[] => {
     const date = new Date(dateString);
     const dayOfWeek = date.getDay();
@@ -42,16 +258,16 @@ export const CalendarioAvancado: React.FC = () => {
 
     const appointments: Appointment[] = [];
     if (professionalId === '1') {
-      appointments.push({ id: '1', time: '09:00', duration: 60, title: 'Consulta Inicial', patient: 'João Silva', type: 'Presencial' });
-      appointments.push({ id: '2', time: '11:00', duration: 30, title: 'Retorno', patient: 'Maria Santos', type: 'Online' });
-      appointments.push({ id: '3', time: '14:30', duration: 90, title: 'Procedimento', patient: 'Carlos Oliveira', type: 'Cirurgia' });
+      appointments.push({ id: '1', time: '09:00', duration: 60, title: 'Consulta Inicial', patient: 'João Silva', type: 'Presencial', date: dateString, professionalId });
+      appointments.push({ id: '2', time: '11:00', duration: 30, title: 'Retorno', patient: 'Maria Santos', type: 'Online', date: dateString, professionalId });
+      appointments.push({ id: '3', time: '14:30', duration: 90, title: 'Procedimento', patient: 'Carlos Oliveira', type: 'Cirurgia', date: dateString, professionalId });
     } else if (professionalId === '2') {
-      appointments.push({ id: '4', time: '08:00', duration: 50, title: 'Terapia', patient: 'Ana Lima', type: 'Presencial' });
-      appointments.push({ id: '5', time: '10:00', duration: 50, title: 'Acompanhamento', patient: 'Pedro Costa', type: 'Online' });
-      appointments.push({ id: '6', time: '13:00', duration: 50, title: 'Primeira Sessão', patient: 'Julia Martins', type: 'Presencial' });
+      appointments.push({ id: '4', time: '08:00', duration: 50, title: 'Terapia', patient: 'Ana Lima', type: 'Presencial', date: dateString, professionalId });
+      appointments.push({ id: '5', time: '10:00', duration: 50, title: 'Acompanhamento', patient: 'Pedro Costa', type: 'Online', date: dateString, professionalId });
+      appointments.push({ id: '6', time: '13:00', duration: 50, title: 'Primeira Sessão', patient: 'Julia Martins', type: 'Presencial', date: dateString, professionalId });
     } else {
-      appointments.push({ id: '7', time: '08:30', duration: 120, title: 'Curativos', patient: 'Roberto Silva', type: 'Ambulatório' });
-      appointments.push({ id: '8', time: '14:00', duration: 60, title: 'Medicação', patient: 'Fernanda Souza', type: 'Ambulatório' });
+      appointments.push({ id: '7', time: '08:30', duration: 120, title: 'Curativos', patient: 'Roberto Silva', type: 'Ambulatório', date: dateString, professionalId });
+      appointments.push({ id: '8', time: '14:00', duration: 60, title: 'Medicação', patient: 'Fernanda Souza', type: 'Ambulatório', date: dateString, professionalId });
     }
     return appointments;
   };
@@ -183,7 +399,19 @@ export const CalendarioAvancado: React.FC = () => {
 
   const renderTimeSlots = () => {
     const dateString = selectedDate.toISOString().split('T')[0];
-    const appointments = getMockAppointments(dateString, selectedProfessional);
+    
+    // 1. Pega os agendamentos mockados
+    const existingMockAppointments = getMockAppointments(dateString, selectedProfessional);
+    
+    // 2. Filtra os agendamentos criados pelo usuário para o dia e profissional selecionados
+    const newAppointmentsForDay = userAppointments.filter(apt => 
+      apt.date === dateString && apt.professionalId === selectedProfessional
+    );
+    
+    // 3. Combina e ordena os agendamentos
+    const appointments = [...existingMockAppointments, ...newAppointmentsForDay]
+      .sort((a, b) => a.time.localeCompare(b.time));
+
     const START_HOUR = 8;
     const END_HOUR = 19;
     const SLOT_HEIGHT = 48;
@@ -239,12 +467,15 @@ export const CalendarioAvancado: React.FC = () => {
             </div>
           ))}
           
-          {/* Agendamentos */}
+          {/* Agendamentos combinados */}
           {appointments.map((apt) => {
             const [hour, minute] = apt.time.split(':').map(Number);
             const startMinutes = (hour - START_HOUR) * 60 + minute;
             const topPx = (startMinutes / 30) * SLOT_HEIGHT;
             const heightPx = (apt.duration / 30) * SLOT_HEIGHT;
+            
+            // Cor de fundo levemente alterada para agendamentos novos
+            const isNew = apt.id.length > 5; // Heurística simples para identificar agendamentos do mock vs novos
             
             return (
               <div
@@ -255,7 +486,7 @@ export const CalendarioAvancado: React.FC = () => {
                   left: '8px',
                   right: '8px',
                   height: `${heightPx}px`,
-                  background: prof?.color,
+                  background: isNew ? '#4f46e5' : prof?.color, // Roxo para novos
                   opacity: 0.9,
                   borderRadius: '6px',
                   padding: '8px',
@@ -284,6 +515,7 @@ export const CalendarioAvancado: React.FC = () => {
                   {apt.patient}
                 </div>
                 <div style={{ fontSize: '10px', marginTop: '2px', opacity: 0.8 }}>
+                  {isNew ? 'NOVO | ' : ''}
                   {apt.type}
                 </div>
               </div>
@@ -296,17 +528,55 @@ export const CalendarioAvancado: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#f9fafb' }}>
-      {/* Header */}
-      <div style={{ padding: '24px', borderBottom: '1px solid #e5e7eb', background: 'white' }}>
-        <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '700', color: '#111' }}>
-          <Calendar size={28} style={{ display: 'inline', marginRight: '12px', verticalAlign: 'middle' }} />
-          Calendário de Agendamentos
-        </h1>
-        <p style={{ margin: 0, color: '#6b7280' }}>Gerencie sua agenda e visualize disponibilidade</p>
+      {/* Header com o botão Novo Agendamento */}
+      <div style={{ 
+        padding: '24px', 
+        borderBottom: '1px solid #e5e7eb', 
+        background: 'white', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-end' 
+      }}>
+        <div>
+          <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '700', color: '#111' }}>
+            <Calendar size={28} style={{ display: 'inline', marginRight: '12px', verticalAlign: 'middle' }} />
+            Calendário de Agendamentos
+          </h1>
+          <p style={{ margin: 0, color: '#6b7280' }}>Gerencie sua agenda e visualize disponibilidade</p>
+        </div>
+        
+        {/* BOTÃO NOVO AGENDAMENTO */}
+        <button 
+          onClick={() => setIsNewAppointmentModalOpen(true)}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '8px',
+            border: 'none',
+            background: '#2563eb', 
+            color: 'white',
+            fontWeight: '600',
+            cursor: 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            transition: 'background 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <Plus size={20} />
+          Novo Agendamento
+        </button>
       </div>
       
-      {/* Conteúdo Principal */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', flex: 1, overflow: 'auto' }}> {/* CORRIGIDO: Removido padding, alterado overflow */}
+      {/* Conteúdo Principal (Calendário e Agenda do Dia) */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr', 
+        gap: '24px', 
+        flex: 1, 
+        overflow: 'auto', 
+        padding: '24px' 
+      }}> 
         
         {/* LADO ESQUERDO: Calendário Mensal */}
         <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px', display: 'flex', flexDirection: 'column' }}>
@@ -437,6 +707,15 @@ export const CalendarioAvancado: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* COMPONENTE MODAL é renderizado no final */}
+      <AgendamentoFormModal 
+        isOpen={isNewAppointmentModalOpen}
+        onClose={() => setIsNewAppointmentModalOpen(false)}
+        selectedDate={selectedDate}
+        selectedProfessionalId={selectedProfessional}
+        onSave={handleSaveAppointment} // Passando a função de salvamento
+      />
     </div>
   );
 };
