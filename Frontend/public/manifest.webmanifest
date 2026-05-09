@@ -1,0 +1,13 @@
+{
+  "name": "Identificação Pet - Carteira Digital",
+  "short_name": "Pet ID",
+  "description": "Carteira digital completa para pets com vacinação, viagem, QR Code e veterinárias próximas.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d4f3c",
+  "theme_color": "#14684f",
+  "icons": [
+    { "src": "/pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
